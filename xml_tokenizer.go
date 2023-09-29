@@ -1,11 +1,16 @@
 package xmlparser
 
-type TokenNode = treeNode[XMLToken]
-type TokenTree = tree[XMLToken]
-type TokenHandler func(string, *TokenNode, TokenNode)
+import (
+	"fmt"
+)
 
-func NewTokenNode(token XMLToken) TokenNode {
-	return TokenNode{data: token, first: -1, last: -1, next: -1}
+var errInvalidXML = fmt.Errorf("invalid xml")
+
+type Element = treeNode[XMLToken]
+type TokenHandler func(string, *Element, Element)
+
+func NewElement(token XMLToken) Element {
+	return Element{data: token, first: -1, last: -1, next: -1}
 }
 
 type XMLTokenizer struct {
@@ -18,9 +23,9 @@ func NewXMLTokenizer(path *xpath) *XMLTokenizer {
 	}
 }
 
-func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) {
-	var s stack[TokenNode] //TODOV: get from pool
-	var xp stack[*xpath]   //TODOV: get from pool, iff xp.path present
+func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
+	var s stack[Element] //TODOV: get from pool
+	var xp stack[*xpath] //TODOV: get from pool, iff xp.path present
 
 	for i := 0; i < len(in); {
 		if in[i] == '<' {
@@ -60,13 +65,27 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) {
 					}
 				}
 
-				s.push(TokenNode{data: token, first: -1, last: -1, next: -1})
+				s.push(Element{data: token, first: -1, last: -1, next: -1})
 			} else if ttype == EndXMLToken {
 				//get start xml tag
 				foundTag := true
-				child := s.pop()
+				var child *Element
+
+				if inlineToken {
+					child = &Element{
+						data: XMLToken{
+							start: xmlTagIndex{si: i, ei: endIndex},
+						},
+						first: -1, last: -1, next: -1,
+					}
+				} else {
+					child = s.pop()
+				}
+
+				if child == nil {
+					return errInvalidXML
+				}
 				child.data.end = xmlTagIndex{si: i, ei: endIndex}
-				//fmt.Printf("%s:<%d,%d,%d>\n", string(child.data.Name(in)), child.data.start.si, child.data.end.ei, child.data.end.ei-child.data.start.si)
 
 				//xpath handling
 				if sp.path != nil {
@@ -79,12 +98,18 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) {
 
 				if foundTag && cb != nil {
 					//append tokens to list
-					cb(string(child.data.Name(in[:])), s.peek(), child)
+					cb(string(child.data.Name(in[:])), s.peek(), *child)
 				}
+
+				//fmt.Printf("%s:<%d,%d,%d>\n", string(child.data.Name(in)), child.data.start.si, child.data.end.ei, child.data.end.ei-child.data.start.si)
 			}
 			i = endIndex
 			continue
 		}
 		i++
 	}
+	if s.len() != 0 {
+		return errInvalidXML
+	}
+	return nil
 }

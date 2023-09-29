@@ -77,7 +77,7 @@ type mockTokenHandler struct {
 	tokens []XMLToken
 }
 
-func (r *mockTokenHandler) append(_ string, parent *TokenNode, child TokenNode) {
+func (r *mockTokenHandler) append(_ string, parent *Element, child Element) {
 	r.tokens = append(r.tokens, child.data)
 }
 
@@ -135,7 +135,7 @@ func TestXMLReader(t *testing.T) {
 	xmlReader := NewXMLReader(nil)
 	xmlReader.Parse(in[:])
 
-	actual := xmlReader.GetXML(in[:])
+	actual := xmlReader.getXML(in[:])
 	t.Logf("Raw Tags: \n%v\n", xmlReader.tree.printRaw(func(t XMLToken) string {
 		return fmt.Sprintf("%s:end(%d:%d)", t.Name(in[:]), t.end.si, t.end.ei)
 	}))

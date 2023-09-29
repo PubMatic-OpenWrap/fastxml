@@ -10,6 +10,8 @@ type xpath struct {
 	childs map[string]*xpath
 }
 
+type XPath = xpath
+
 func (n *xpath) add(path []string) {
 	tempNode := n
 	for _, key := range path {

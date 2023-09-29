@@ -13,6 +13,7 @@ const (
 	DOCTYPEXMLToken                        //<!DOCTYPE [ text ]>
 	TextToken                              //text
 )
+
 const (
 	cdataStart = "<![CDATA["
 	cdataEnd   = "]]>"
@@ -65,12 +66,21 @@ func (t XMLToken) Name(in []byte) []byte {
 	return in[t.name.si:t.name.ei]
 }
 
+func (t XMLToken) StartTagOffset() (start, end int) {
+	return t.start.si, t.start.ei
+}
+
 func (t XMLToken) EndTagOffset() (start, end int) {
 	return t.end.si, t.end.ei
 }
 
 func (t XMLToken) ParseAttribute(in []byte) []xmlAttribute {
+	//check for inline token
 	return parseAttributes(in[:], t.start.si, t.start.ei)
+}
+
+func (t XMLToken) IsInline() bool {
+	return (t.start.si == t.end.si)
 }
 
 func getTokenType(in []byte, index int) xmlTokenType {
@@ -99,7 +109,7 @@ func getTokenType(in []byte, index int) xmlTokenType {
 	case '?':
 		return ProcessingXMLToken
 	default:
-		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') {
+		if alpha[ch] {
 			return StartXMLToken
 		}
 	}
@@ -147,7 +157,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 	case ProcessingXMLToken:
 		// read until >, no need for read until ?> for processing tokens
 		for i := startIndex + 1; i < len(in); i++ {
-			if in[i] == '>' {
+			if in[i] == '>' && in[i-1] == '?' {
 				//found end tag
 				index = i
 				break
@@ -156,7 +166,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 	case CommentsXMLToken:
 		// read until found -->
 		for i := startIndex + 1; i < len(in); i++ {
-			if in[i] == '>' && in[i-1] == '-' && in[i-2] == '>' {
+			if in[i] == '>' && in[i-1] == '-' && in[i-2] == '-' {
 				//found end tag
 				index = i
 				break
@@ -166,6 +176,13 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 		// read until ]]> /*<![CDATA[ 25.00 ]]>*/
 		for i := startIndex + 1; i < len(in); i++ {
 			if in[i] == '>' && in[i-1] == ']' && in[i-2] == ']' {
+				/*
+					TODO: Special handling (https://en.wikipedia.org/wiki/CDATA#Nesting)
+					input: <![CDATA[ data ]]> data ]]>
+					replace ]]> with ]]]]><![CDATA[>
+					output: <![CDATA[ data ]]]]><![CDATA[> data ]]>
+					action: ignore if found ']]]]><![CDATA[>'
+				*/
 				//found end tag
 				index = i
 				break
@@ -191,14 +208,3 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 	}
 	return index + 1, inline
 }
-
-/*
-xmlToken
-	- ttype -- starttag type
-	- start[si:ei] <> xmlnode, preprocessing, comment, doctype, cdata
-	- end[si:ei] <> xmlnode
-+ getTokenType xmlTokenType
-+ getTokenName() []byte
-+ getAttribute(key) []byte
-+ getText() []byte
-*/
