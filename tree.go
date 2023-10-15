@@ -1,4 +1,4 @@
-package xmlparser
+package fastxml
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type comparable[T any] func(string, T) bool
+type compare[T any] func(string, T) bool
 
 type treeNode[T any] struct {
 	data                     T
@@ -72,7 +72,7 @@ func (t *tree[T]) getChildrens(parent int, cb func(*treeNode[T])) {
 
 func (t *tree[T]) _get(parent int,
 	path []string,
-	match comparable[T],
+	match compare[T],
 	cb func(*treeNode[T])) {
 
 	t.getMatchedChildrens(parent,
@@ -93,7 +93,7 @@ func (t *tree[T]) _get(parent int,
 get function returns always last element
 TODO: write changes for return first element
 */
-func (t *tree[T]) get(parent *treeNode[T], path []string, match comparable[T]) (result *treeNode[T]) {
+func (t *tree[T]) get(parent *treeNode[T], path []string, match compare[T]) (result *treeNode[T]) {
 	parentIndex := 0
 	if parent != nil {
 		parentIndex = parent.index
@@ -105,7 +105,7 @@ func (t *tree[T]) get(parent *treeNode[T], path []string, match comparable[T]) (
 	return
 }
 
-func (t *tree[T]) getAll(parent *treeNode[T], path []string, match comparable[T]) (result []*treeNode[T]) {
+func (t *tree[T]) getAll(parent *treeNode[T], path []string, match compare[T]) (result []*treeNode[T]) {
 	parentIndex := 0
 	if parent != nil {
 		parentIndex = parent.index

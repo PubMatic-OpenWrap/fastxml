@@ -1,6 +1,8 @@
-package xmlparser
+package fastxml
 
-import "bytes"
+import (
+	"bytes"
+)
 
 type ElementTree = tree[XMLToken]
 

@@ -1,4 +1,4 @@
-package xmlparser
+package fastxml
 
 // A simple stack
 type stack[T any] struct {

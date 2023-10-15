@@ -1,4 +1,4 @@
-package xmlparser
+package fastxml
 
 import (
 	"bytes"
@@ -141,6 +141,95 @@ func TestXMLReader(t *testing.T) {
 	}))
 	t.Logf("XML: %v\n", actual)
 	assert.Equal(t, string(in), actual)
+}
+
+func TestXMLReader1(t *testing.T) {
+	xmldoc := []byte(`<?xml version='1.0'?>
+<Catalog>
+	<Book id="bk101">
+		<Author>Garghentini, Davide</Author>
+		<Title>XML Developer's Guide</Title>
+		<Genre>Computer</Genre>
+		<Price>44.95</Price>
+		<PublishDate>2000-10-01</PublishDate>
+		<Description>An in-depth look at creating applications with XML.</Description>
+	</Book>
+	<Book id="bk102">
+		<Author>Garcia, Debra</Author>
+		<Title>Midnight Rain</Title>
+		<Genre>Fantasy</Genre>
+		<Price>5.95</Price>
+		<PublishDate>2000-12-16</PublishDate>
+		<Description>A former architect battles corporate zombies, an evil sorceress, and her own childhood to become queen of the world.</Description>
+	</Book>
+</Catalog>
+	`)
+
+	xmlReader := NewXMLReader(nil)
+	err := xmlReader.Parse(xmldoc[:])
+	if err != nil {
+		fmt.Printf("xml parsing error: %s", err.Error())
+		return
+	}
+
+	fmt.Printf("\nXML:\n%s", xmldoc)
+
+	for _, element := range xmlReader.FindElements(nil, "Catalog", "Book") {
+		fmt.Printf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.GetAttribute(element, "id"), xmlReader.GetText(element, true))
+	}
+
+	for _, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Author") {
+		fmt.Printf("\n/Catalog/Book/Author = %v", xmlReader.GetText(element, true))
+	}
+
+	fmt.Println()
+}
+
+func TestXMLReader2(t *testing.T) {
+	xmldoc := []byte(`<?xml version='1.0'?>
+<Catalog>
+	<Book id="bk101">
+		<Author>Garghentini, Davide</Author>
+		<Title>XML Developer's Guide</Title>
+		<Genre>Computer</Genre>
+		<Price>44.95</Price>
+		<PublishDate>2000-10-01</PublishDate>
+		<Description>An in-depth look at creating applications with XML.</Description>
+	</Book>
+	<Book id="bk102">
+		<Author>Garcia, Debra</Author>
+		<Title>Midnight Rain</Title>
+		<Genre>Fantasy</Genre>
+		<Price>5.95</Price>
+		<PublishDate>2000-12-16</PublishDate>
+		<Description>A former architect battles corporate zombies, an evil sorceress, and her own childhood to become queen of the world.</Description>
+	</Book>
+</Catalog>
+	`)
+
+	xmlReader := NewXMLReader(
+		GetXPath([][]string{
+			{"Catalog", "Book", "Author"},
+			{"Catalog", "Book", "Title"},
+		}),
+	)
+	err := xmlReader.Parse(xmldoc[:])
+	if err != nil {
+		fmt.Printf("xml parsing error: %s", err.Error())
+		return
+	}
+
+	fmt.Printf("\nXML:\n%s", xmldoc)
+
+	for i, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Author") {
+		fmt.Printf("\n/Catalog/Book/Author[%d] = %v", i, xmlReader.GetText(element, true))
+	}
+
+	for i, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Genre") {
+		fmt.Printf("\n/Catalog/Book/Genre[%d] = %v", i, xmlReader.GetText(element, true))
+	}
+
+	fmt.Println()
 }
 
 /*

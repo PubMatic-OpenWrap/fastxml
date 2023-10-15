@@ -1,4 +1,8 @@
-package xmlparser
+package fastxml
+
+import (
+	"bytes"
+)
 
 type xmlTokenType int
 
@@ -12,6 +16,8 @@ const (
 	CDATAXMLToken                          //<![CDATA[ text ]]>
 	DOCTYPEXMLToken                        //<!DOCTYPE [ text ]>
 	TextToken                              //text
+
+	MaxXMLTokenType
 )
 
 const (
@@ -50,6 +56,9 @@ func NewXMLToken(ssi, sei, esi, eei int) XMLToken {
 }
 
 func (t *XMLToken) Text(in []byte, removeCDATA bool) []byte {
+	if t.start.si == t.end.si {
+		return nil //inline tag doesn't have text
+	}
 	if t.text.si == 0 {
 		t.text.si, t.text.ei = t.start.ei, t.end.si
 		if removeCDATA {
@@ -59,9 +68,9 @@ func (t *XMLToken) Text(in []byte, removeCDATA bool) []byte {
 	return in[t.text.si:t.text.ei]
 }
 
-func (t XMLToken) Name(in []byte) []byte {
+func (t *XMLToken) Name(in []byte) []byte {
 	if t.name.si == 0 {
-		t.name.si, t.name.ei = getTokenNameIndex(in, t.start.si, 1)
+		t.name.si, t.name.ei = getTokenNameIndex(in, t.start.si+1)
 	}
 	return in[t.name.si:t.name.ei]
 }
@@ -75,8 +84,11 @@ func (t XMLToken) EndTagOffset() (start, end int) {
 }
 
 func (t XMLToken) ParseAttribute(in []byte) []xmlAttribute {
-	//check for inline token
-	return parseAttributes(in[:], t.start.si, t.start.ei)
+	offset := 1
+	if t.start.si == t.end.si {
+		offset = 2 //check for inline token eg: <test k="v"/>
+	}
+	return parseAttributes(in[:], t.name.ei, t.start.ei-offset)
 }
 
 func (t XMLToken) IsInline() bool {
@@ -85,26 +97,38 @@ func (t XMLToken) IsInline() bool {
 
 func getTokenType(in []byte, index int) xmlTokenType {
 	if index >= len(in) {
+		//TODO: donot check for negative values,
+		//as this is used by internally and this condition won't happens
 		return UnknownXMLToken
 	}
-	//remove whitespace
+	//TODO: check if removing whitespace required
 	ch := in[index]
 	switch ch {
 	case '/':
 		return EndXMLToken
 	case '!':
-		//remove whitespace
-		if index+1 >= len(in) {
+		//TODO: check if removing whitespace required
+		index++
+		if index >= len(in) {
 			return UnknownXMLToken
 		}
-		ch1 := in[index+1]
+		ch1 := in[index]
 		switch ch1 {
 		case '-':
-			return CommentsXMLToken
+			if index+1 < len(in) && in[index+1] == '-' {
+				//check for full comment <!--
+				return CommentsXMLToken
+			}
 		case '[':
-			return CDATAXMLToken
+			if bytes.HasPrefix(in[index:], []byte(`[CDATA[`)) {
+				//check for full <![CDATA[
+				return CDATAXMLToken
+			}
 		case 'D':
-			return DOCTYPEXMLToken
+			if bytes.HasPrefix(in[index:], []byte(`DOCTYPE`)) {
+				//check for full <!DOCTYPE
+				return DOCTYPEXMLToken
+			}
 		}
 	case '?':
 		return ProcessingXMLToken
@@ -116,66 +140,76 @@ func getTokenType(in []byte, index int) xmlTokenType {
 	return UnknownXMLToken
 }
 
-func getTokenNameIndex(in []byte, startIndex int, offset int) (si, ei int) {
-	si = startIndex + offset
+func getTokenNameIndex(in []byte, startIndex int) (si, ei int) {
+	var firstNameSpace bool
+	si = startIndex
 	for i := si; i < len(in); i++ {
-		if in[i] == '>' || whitespace[in[i]] || in[i] == '/' {
-			return si, i
-		} else if in[i] == ':' {
-			si = i + 1
+		if name[in[i]] {
+			continue
 		}
+		if in[i] == '>' || whitespace[in[i]] || in[i] == '/' {
+			if alpha[in[si]] || in[si] == '_' {
+				return si, i
+			}
+		} else if in[i] == ':' && !firstNameSpace {
+			//TODO: return namespace indexes too
+			si = i + 1
+			firstNameSpace = true
+			continue
+		}
+		break //invalid token name
 	}
-	return si, si //not found
+	return startIndex, startIndex //not found
 }
 
 func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool) {
 	index := -1
 	inline := false
-	//TODO: loops can be avoided
+	//TODO: write token type based parsers and execute it separately
 	switch ttype {
 	case StartXMLToken:
-		// read until >, no need for read until ?> for processing tokens
-		for i := startIndex + 1; i < len(in); i++ {
+		// read until >
+		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' {
-				if in[i-1] == '/' {
+				if i > 0 && in[i-1] == '/' {
 					inline = true
 				}
 				//found end tag
-				index = i
+				index = i + 1
 				break
 			}
 		}
 	case EndXMLToken:
-		// read until >, no need for read until ?> for processing tokens
-		for i := startIndex + 1; i < len(in); i++ {
+		// read until >
+		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' {
 				//found end tag
-				index = i
+				index = i + 1
 				break
 			}
 		}
 	case ProcessingXMLToken:
-		// read until >, no need for read until ?> for processing tokens
-		for i := startIndex + 1; i < len(in); i++ {
-			if in[i] == '>' && in[i-1] == '?' {
+		// read until ?>
+		for i := startIndex; i < len(in); i++ {
+			if in[i] == '>' && i > 0 && in[i-1] == '?' {
 				//found end tag
-				index = i
+				index = i + 1
 				break
 			}
 		}
 	case CommentsXMLToken:
 		// read until found -->
-		for i := startIndex + 1; i < len(in); i++ {
-			if in[i] == '>' && in[i-1] == '-' && in[i-2] == '-' {
+		for i := startIndex; i < len(in); i++ {
+			if in[i] == '>' && i > 1 && in[i-1] == '-' && in[i-2] == '-' {
 				//found end tag
-				index = i
+				index = i + 1
 				break
 			}
 		}
 	case CDATAXMLToken:
 		// read until ]]> /*<![CDATA[ 25.00 ]]>*/
-		for i := startIndex + 1; i < len(in); i++ {
-			if in[i] == '>' && in[i-1] == ']' && in[i-2] == ']' {
+		for i := startIndex; i < len(in); i++ {
+			if in[i] == '>' && i > 1 && in[i-1] == ']' && in[i-2] == ']' {
 				/*
 					TODO: Special handling (https://en.wikipedia.org/wiki/CDATA#Nesting)
 					input: <![CDATA[ data ]]> data ]]>
@@ -184,27 +218,45 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 					action: ignore if found ']]]]><![CDATA[>'
 				*/
 				//found end tag
-				index = i
+				index = i + 1
 				break
 			}
 		}
 	case DOCTYPEXMLToken:
-		//read until ]>
-		for i := startIndex + 1; i < len(in); i++ {
-			if in[i] == '>' && in[i-1] == ']' {
-				//found end tag
-				index = i
+		/*
+			TODO:
+			1. UNDER DEVELOPMENT
+			2. Nested DCOTYPE strict checking not supported yet
+			if DOCTYPE contains [ start then ends with ]> else ends with >
+		*/
+		var bracketCounts int
+		for i := startIndex; i < len(in); i++ {
+			if in[i] == '>' {
+				if bracketCounts == 0 {
+					//found end tag
+					index = i + 1
+				} else {
+					if bracketCounts == 1 && i > 0 && in[i-1] == ']' {
+						index = i + 1
+					} else {
+						bracketCounts--
+						continue
+					}
+				}
 				break
+			} else if in[i] == '[' {
+				//TODO: Buggy no strict checking of tag
+				bracketCounts++
 			}
 		}
 	default:
 		//read token based on tokentype
-		for i := startIndex + 1; i < len(in); i++ {
+		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' {
-				index = i
+				index = i + 1
 				break
 			}
 		}
 	}
-	return index + 1, inline
+	return index, inline
 }

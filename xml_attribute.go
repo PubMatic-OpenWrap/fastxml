@@ -1,4 +1,4 @@
-package xmlparser
+package fastxml
 
 type xmlAttribute struct {
 	key, value xmlTagIndex
@@ -45,6 +45,7 @@ func parseAttributes(in []byte, si, ei int) (attributes []xmlAttribute) {
 }
 
 func _parseKey(in []byte, si, ei int) (int, int, bool) {
+	//TODO: adding check for namespace parsing for attribute
 	len := ei
 	for ; si < len && whitespace[in[si]]; si = si + 1 {
 	}

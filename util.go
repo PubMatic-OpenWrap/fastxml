@@ -1,4 +1,4 @@
-package xmlparser
+package fastxml
 
 import "bytes"
 

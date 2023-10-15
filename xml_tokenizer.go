@@ -1,4 +1,4 @@
-package xmlparser
+package fastxml
 
 import (
 	"fmt"
@@ -24,21 +24,27 @@ func NewXMLTokenizer(path *xpath) *XMLTokenizer {
 }
 
 func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
-	var s stack[Element] //TODOV: get from pool
-	var xp stack[*xpath] //TODOV: get from pool, iff xp.path present
+	/*
+		TODO:
+		1. get s from pool,
+		2. get xp from pool, iff xp.path present
+		3. adding defer to put stack and xp into pool back
+	*/
+	var s stack[Element]
+	var xp stack[*xpath]
 
 	for i := 0; i < len(in); {
 		if in[i] == '<' {
 			//get token type
 			ttype := getTokenType(in, i+1)
 
-			//get token endindex //TODO this should return token with all details
-			endIndex, inlineToken := getTokenEndIndex(in, i, ttype)
+			//TODO this should return token with all details
+			//get token endindex
+			endIndex, inlineToken := getTokenEndIndex(in, i+1, ttype)
 
 			//invalid token
 			if endIndex == -1 {
-				//there is an issue, append till end and loop will end
-				endIndex = len(in)
+				return errInvalidXML
 			}
 
 			if inlineToken {
