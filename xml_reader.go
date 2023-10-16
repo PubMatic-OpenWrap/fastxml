@@ -30,6 +30,7 @@ func (xr *XMLReader) Parse(in []byte) error {
 }
 
 func (xr *XMLReader) FindElement(parent *Element, path ...string) *Element {
+	//TODO: adding functionality to return first element instead of last element
 	return xr.tree.get(parent, path[:], func(s string, t XMLToken) bool {
 		return bytes.Equal(t.Name(xr.in), []byte(s))
 	})

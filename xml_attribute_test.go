@@ -32,6 +32,26 @@ func Test_parseKey(t *testing.T) {
 			want: want{value: `key`, found: true},
 		},
 		{
+			name: "namespace_valid",
+			in:   `xs:key="value"  `,
+			want: want{value: `key`, found: true},
+		},
+		{
+			name: "namespace_missing_key",
+			in:   `xs:="value"  `,
+			want: want{value: ``, found: false},
+		},
+		{
+			name: "namespace_invalid_key",
+			in:   `xs:1key="value"  `,
+			want: want{value: ``, found: false},
+		},
+		{
+			name: "namespace_missing_namespace",
+			in:   `:key="value"  `,
+			want: want{value: ``, found: false},
+		},
+		{
 			name: "valid_with_whitespaces",
 			in:   ` key = "value"  `,
 			want: want{value: `key`, found: true},

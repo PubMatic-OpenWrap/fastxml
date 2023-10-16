@@ -83,6 +83,10 @@ func (t XMLToken) EndTagOffset() (start, end int) {
 	return t.end.si, t.end.ei
 }
 
+func (t XMLToken) TagOffset() (start, end int) {
+	return t.start.si, t.end.ei
+}
+
 func (t XMLToken) ParseAttribute(in []byte) []xmlAttribute {
 	offset := 1
 	if t.start.si == t.end.si {

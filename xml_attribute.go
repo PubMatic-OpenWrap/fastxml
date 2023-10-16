@@ -45,11 +45,21 @@ func parseAttributes(in []byte, si, ei int) (attributes []xmlAttribute) {
 }
 
 func _parseKey(in []byte, si, ei int) (int, int, bool) {
-	//TODO: adding check for namespace parsing for attribute
 	len := ei
 	for ; si < len && whitespace[in[si]]; si = si + 1 {
 	}
-	for ei = si; ei < len && name[in[ei]]; ei = ei + 1 {
+	for ei = si; ei < len; ei = ei + 1 {
+		if in[ei] == ':' {
+			if si == ei {
+				//case: missing namespace eg :key="value"
+				break
+			}
+			si = ei + 1
+			continue
+		}
+		if !name[in[ei]] {
+			break
+		}
 	}
 	if ei < len && (alpha[in[si]] || in[si] == '_') {
 		return si, ei, true

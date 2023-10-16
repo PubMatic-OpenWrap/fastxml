@@ -15,7 +15,16 @@ type xmlOperation struct {
 TODO: makesure not 2 operations overlaps
 */
 type XMLUpdater struct {
+	in  []byte
+	cb  func(*bytes.Buffer, ...any)
 	ops []xmlOperation
+}
+
+func NewXMLUpdater(in []byte, cb func(*bytes.Buffer, ...any)) *XMLUpdater {
+	return &XMLUpdater{
+		in: in[:],
+		cb: cb,
+	}
 }
 
 func (xu *XMLUpdater) Insert(index int, parameters ...any) {
@@ -26,7 +35,7 @@ func (xu *XMLUpdater) Replace(start int, end int, parameters ...any) {
 	xu.ops = append(xu.ops, xmlOperation{startIndex: start, endIndex: end, parameters: parameters})
 }
 
-func (xu *XMLUpdater) Build(buf *bytes.Buffer, in []byte, cb func(*bytes.Buffer, ...any)) {
+func (xu *XMLUpdater) Build(buf *bytes.Buffer) {
 	//sort operations based on index
 	sort.SliceStable(xu.ops[:], func(i, j int) bool {
 		return (xu.ops[i].startIndex < xu.ops[j].startIndex ||
@@ -36,10 +45,10 @@ func (xu *XMLUpdater) Build(buf *bytes.Buffer, in []byte, cb func(*bytes.Buffer,
 	offset := 0
 	for _, op := range xu.ops {
 		if offset < op.startIndex {
-			buf.Write(in[offset:op.startIndex])
+			buf.Write(xu.in[offset:op.startIndex])
 			offset = op.endIndex
 		}
-		cb(buf, op.parameters...)
+		xu.cb(buf, op.parameters...)
 	}
-	buf.Write(in[offset:])
+	buf.Write(xu.in[offset:])
 }
