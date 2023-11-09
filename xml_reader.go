@@ -42,12 +42,19 @@ func (xr *XMLReader) FindElements(parent *Element, path ...string) (result []*El
 	})
 }
 
-func (xr *XMLReader) GetAttribute(node *Element, key string) (value string) {
+func (xr *XMLReader) GetAttribute(node *Element, key string) *Attribute {
 	attr := node.data.ParseAttribute(xr.in)
 	for _, at := range attr {
 		if bytes.Equal(at.Key(xr.in), []byte(key)) {
-			return string(at.Value(xr.in))
+			return &at
 		}
+	}
+	return nil
+}
+
+func (xr *XMLReader) GetAttributeValue(node *Element, key string) (value string) {
+	if attr := xr.GetAttribute(node, key); attr != nil {
+		return string(attr.Value(xr.in))
 	}
 	return ""
 }

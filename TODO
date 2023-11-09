@@ -6,9 +6,11 @@
   * xpath
 * xmlupdater
     * do not allow overlapping operations
+    * inline tag updater
 * xpath
     * support for * matching
 * xmlreader / tree
     * get
       * first found match
       * '*' matching pattern
+

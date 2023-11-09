@@ -75,19 +75,7 @@ func (t *XMLToken) Name(in []byte) []byte {
 	return in[t.name.si:t.name.ei]
 }
 
-func (t XMLToken) StartTagOffset() (start, end int) {
-	return t.start.si, t.start.ei
-}
-
-func (t XMLToken) EndTagOffset() (start, end int) {
-	return t.end.si, t.end.ei
-}
-
-func (t XMLToken) TagOffset() (start, end int) {
-	return t.start.si, t.end.ei
-}
-
-func (t XMLToken) ParseAttribute(in []byte) []xmlAttribute {
+func (t XMLToken) ParseAttribute(in []byte) []Attribute {
 	offset := 1
 	if t.start.si == t.end.si {
 		offset = 2 //check for inline token eg: <test k="v"/>
@@ -96,7 +84,19 @@ func (t XMLToken) ParseAttribute(in []byte) []xmlAttribute {
 }
 
 func (t XMLToken) IsInline() bool {
-	return (t.start.si == t.end.si)
+	return (t.start.ei == t.end.ei)
+}
+
+func (t XMLToken) StartTagOffset() (si, ei int) {
+	return t.start.si, t.start.ei
+}
+
+func (t XMLToken) EndTagOffset() (si, ei int) {
+	return t.end.si, t.end.ei
+}
+
+func (t XMLToken) TagOffset() (si, ei int) {
+	return t.start.si, t.end.ei
 }
 
 func getTokenType(in []byte, index int) xmlTokenType {

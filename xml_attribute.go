@@ -1,26 +1,26 @@
 package fastxml
 
-type xmlAttribute struct {
+type Attribute struct {
 	key, value xmlTagIndex
 }
 
-func (a xmlAttribute) Key(in []byte) []byte {
+func (a Attribute) Key(in []byte) []byte {
 	return in[a.key.si:a.key.ei]
 }
 
-func (a xmlAttribute) Value(in []byte) []byte {
+func (a Attribute) Value(in []byte) []byte {
 	return in[a.value.si:a.value.ei]
 }
 
 // String function print key and value
-func (a xmlAttribute) String(in []byte) string {
+func (a Attribute) String(in []byte) string {
 	return string(in[a.key.si : a.value.ei+1])
 }
 
-func parseAttributes(in []byte, si, ei int) (attributes []xmlAttribute) {
+func parseAttributes(in []byte, si, ei int) (attributes []Attribute) {
 	found := true
 	for found {
-		var attr xmlAttribute
+		var attr Attribute
 
 		//parsing key
 		attr.key.si, attr.key.ei, found = _parseKey(in, si, ei)

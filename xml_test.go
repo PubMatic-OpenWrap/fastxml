@@ -168,21 +168,19 @@ func TestXMLReader1(t *testing.T) {
 	xmlReader := NewXMLReader(nil)
 	err := xmlReader.Parse(xmldoc[:])
 	if err != nil {
-		fmt.Printf("xml parsing error: %s", err.Error())
+		t.Errorf("xml parsing error: %s", err.Error())
 		return
 	}
 
-	fmt.Printf("\nXML:\n%s", xmldoc)
+	t.Logf("\nXML:\n%s", xmldoc)
 
 	for _, element := range xmlReader.FindElements(nil, "Catalog", "Book") {
-		fmt.Printf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.GetAttribute(element, "id"), xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.GetAttributeValue(element, "id"), xmlReader.GetText(element, true))
 	}
 
 	for _, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Author") {
-		fmt.Printf("\n/Catalog/Book/Author = %v", xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book/Author = %v", xmlReader.GetText(element, true))
 	}
-
-	fmt.Println()
 }
 
 func TestXMLReader2(t *testing.T) {
@@ -215,64 +213,17 @@ func TestXMLReader2(t *testing.T) {
 	)
 	err := xmlReader.Parse(xmldoc[:])
 	if err != nil {
-		fmt.Printf("xml parsing error: %s", err.Error())
+		t.Errorf("xml parsing error: %s", err.Error())
 		return
 	}
 
-	fmt.Printf("\nXML:\n%s", xmldoc)
+	t.Logf("\nXML:\n%s", xmldoc)
 
 	for i, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Author") {
-		fmt.Printf("\n/Catalog/Book/Author[%d] = %v", i, xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book/Author[%d] = %v", i, xmlReader.GetText(element, true))
 	}
 
 	for i, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Genre") {
-		fmt.Printf("\n/Catalog/Book/Genre[%d] = %v", i, xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book/Genre[%d] = %v", i, xmlReader.GetText(element, true))
 	}
-
-	fmt.Println()
 }
-
-/*
-type rawToken struct {
-	index int //XMLTokenIndex
-	data  []byte
-}
-
-func splitTag(in []byte, tokens []XMLToken, index int, raw rawToken) {
-	for i, token := range tokens {
-		fmt.Printf("%d:%s:start(%d,%d):end(%d,%d)\n", i, token.Name(in[:]), token.start.si, token.start.ei, token.end.si, token.end.ei)
-	}
-	var buf bytes.Buffer
-
-	var offset int = 0
-	for i, token := range tokens {
-		if i != raw.index {
-			fmt.Printf("%d: %s\n", i, in[offset:token.end.ei])
-			buf.Write(in[offset:token.end.ei])
-		} else {
-			fmt.Printf("%d.1: %s\n", i, in[offset:token.start.si])
-			buf.Write(in[offset:token.start.si])
-
-			fmt.Printf("%d.2: %s\n", i, raw.data)
-			buf.Write(raw.data[:])
-		}
-		offset = token.end.ei
-	}
-	fmt.Printf("\n\n%s", buf.String())
-}
-
-func TestSplitTag(t *testing.T) {
-	parser := XMLTokenizer{}
-	in := []byte(minixml)
-	tokens := []XMLToken{}
-	parser.Parse(in[:], func(_ string, parent *tnode[XMLToken], child tnode[XMLToken]) {
-		tokens = append(tokens, child.Data())
-	})
-
-	actual := parser.GetXML(in[:], tokens[:])
-	//t.Logf("Raw Tags: \n%v\n", printTokens(in[:], tokens[:]))
-	//t.Logf("XML: %v\n", parser.GetXML(in[:], tokens[:]))
-	assert.Equal(t, string(in), actual)
-	splitTag(in, tokens, 2, rawToken{index: 2, data: []byte(`<raw>rawdata</raw>`)})
-}
-*/
