@@ -143,3 +143,73 @@ func (t *tree[T]) printRaw(f func(T) string) string {
 	}
 	return buf.String()
 }
+
+/*
+func (t *tree[T]) getFirst(parent *treeNode[T], path []string, match compare[T]) (result *treeNode[T]) {
+	parentIndex := 0
+	if parent != nil {
+		parentIndex = parent.index
+	}
+
+	stack := make([]int, len(path))
+	var pathIndex int
+
+	for pathIndex != -1 {
+		var index int
+		if stack[pathIndex] == 0 {
+			index = t.nodes[parentIndex].first
+		} else {
+			index = stack[pathIndex]
+		}
+
+		//get child index
+		for ; index != -1; index = t.nodes[index].next {
+			if match == nil || match(path[pathIndex], t.nodes[index].data) {
+				//found
+				break
+			}
+		}
+
+		if index == -1 {
+			//not found, do back track
+			stack[pathIndex] = 0
+			pathIndex--
+		} else {
+			stack[pathIndex] = index
+			pathIndex++
+			if pathIndex == len(path) {
+				return &t.nodes[index]
+			}
+		}
+	}
+
+	return nil
+}
+*/
+
+func (t *tree[T]) getChild(parent *treeNode[T], child string, match compare[T]) (result *treeNode[T]) {
+	parentIndex := 0
+	if parent != nil {
+		parentIndex = parent.index
+	}
+
+	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
+		if match == nil || match(child, t.nodes[i].data) {
+			return &t.nodes[i]
+		}
+	}
+	return nil
+}
+
+func (t *tree[T]) getNext(sibling *treeNode[T], node string, match compare[T]) (result *treeNode[T]) {
+	if sibling == nil {
+		return nil
+	}
+
+	for i := t.nodes[sibling.index].next; i != -1; i = t.nodes[i].next {
+		if match == nil || match(node, t.nodes[i].data) {
+			return &t.nodes[i]
+		}
+	}
+	return nil
+}
