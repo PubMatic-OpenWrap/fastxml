@@ -13,10 +13,15 @@ type XMLReader struct {
 }
 
 func NewXMLReader(path *xpath) *XMLReader {
-	return &XMLReader{
-		tree:   ElementTree{},
+	xr := &XMLReader{
 		parser: NewXMLTokenizer(path),
 	}
+	xr.tree = ElementTree{match: xr.match}
+	return xr
+}
+
+func (xr *XMLReader) match(name string, token XMLToken) bool {
+	return bytes.Equal(token.Name(xr.in), []byte(name))
 }
 
 func (xr *XMLReader) tokenHandler(name string, parent *Element, child Element) {
@@ -29,17 +34,22 @@ func (xr *XMLReader) Parse(in []byte) error {
 	return xr.parser.Parse(in, xr.tokenHandler)
 }
 
+func (xr *XMLReader) Childrens(parent *Element) (result []*Element) {
+	return xr.tree.getChilds(parent)
+}
+
 func (xr *XMLReader) FindElement(parent *Element, path ...string) *Element {
-	//TODO: adding functionality to return first element instead of last element
-	return xr.tree.get(parent, path[:], func(s string, t XMLToken) bool {
-		return bytes.Equal(t.Name(xr.in), []byte(s))
-	})
+	if len(path) == 1 {
+		return xr.tree.getChild(parent, path[0])
+	}
+	return xr.tree.getPathNode(parent, path...)
 }
 
 func (xr *XMLReader) FindElements(parent *Element, path ...string) (result []*Element) {
-	return xr.tree.getAll(parent, path[:], func(s string, t XMLToken) bool {
-		return bytes.Equal(t.Name(xr.in), []byte(s))
-	})
+	if len(path) == 1 {
+		return xr.tree.getAllChild(parent, path[0])
+	}
+	return xr.tree.getPathNodes(parent, path...)
 }
 
 func (xr *XMLReader) GetAttribute(node *Element, key string) *Attribute {

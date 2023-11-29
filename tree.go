@@ -23,6 +23,7 @@ func (n treeNode[T]) Index() int {
 
 type tree[T any] struct {
 	nodes []treeNode[T] //first node will be always last node
+	match compare[T]
 }
 
 /*
@@ -55,66 +56,89 @@ func (t *tree[T]) reset() {
 	t.nodes = t.nodes[:0]
 }
 
-func (t *tree[T]) getMatchedChildrens(parent int, match func(T) bool, cb func(*treeNode[T])) {
-	if parent < 0 || parent >= len(t.nodes) {
-		return
+func (t *tree[T]) getChild(parent *treeNode[T], child string) (result *treeNode[T]) {
+	parentIndex := 0
+	if parent != nil {
+		parentIndex = parent.index
 	}
+
+	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
+		if t.match != nil && t.match(child, t.nodes[i].data) {
+			return &t.nodes[i]
+		}
+	}
+	return nil
+}
+
+func (t *tree[T]) getAllChild(parent *treeNode[T], child string) (result []*treeNode[T]) {
+	parentIndex := 0
+	if parent != nil {
+		parentIndex = parent.index
+	}
+
+	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
+		if t.match != nil && t.match(child, t.nodes[i].data) {
+			result = append(result, &t.nodes[i])
+		}
+	}
+	return
+}
+
+func (t *tree[T]) getChilds(parent *treeNode[T]) (result []*treeNode[T]) {
+	index := 0
+	if parent != nil {
+		index = parent.index
+	}
+	for i := t.nodes[index].first; i != -1; i = t.nodes[i].next {
+		result = append(result, &t.nodes[i])
+	}
+	return
+}
+
+func (t *tree[T]) _getPath(parent int, result *[]*treeNode[T], path ...string) {
 	for i := t.nodes[parent].first; i != -1; i = t.nodes[i].next {
-		if match == nil || match(t.nodes[i].data) {
-			cb(&t.nodes[i])
+		if t.match != nil && t.match(path[0], t.nodes[i].data) {
+			if len(path) == 1 {
+				(*result) = append((*result), &t.nodes[i])
+			} else {
+				t._getPath(i, result, path[1:]...)
+			}
 		}
 	}
 }
 
-func (t *tree[T]) getChildrens(parent int, cb func(*treeNode[T])) {
-	t.getMatchedChildrens(parent, nil, cb)
+func (t *tree[T]) getPathNodes(parent *treeNode[T], path ...string) (result []*treeNode[T]) {
+	index := 0
+	if parent != nil {
+		index = parent.index
+	}
+	t._getPath(index, &result, path...)
+	return
 }
 
-func (t *tree[T]) _get(parent int,
-	path []string,
-	match compare[T],
-	cb func(*treeNode[T])) {
+func (t *tree[T]) getPathNode(parent *treeNode[T], path ...string) (result *treeNode[T]) {
+	parentIndex := 0
+	if parent != nil {
+		parentIndex = parent.index
+	}
 
-	t.getMatchedChildrens(parent,
-		func(node T) bool {
-			return match(path[0], node)
-		},
-		func(node *treeNode[T]) {
-			if len(path) == 1 { // last element
-				cb(node)
-			} else {
-				t._get(node.index, path[1:], match, cb)
+	for iPath := 0; iPath < len(path); iPath++ {
+		j := t.nodes[parentIndex].first
+		for j != -1 {
+			if t.match != nil && t.match(path[iPath], t.nodes[j].data) {
+				//found
+				break
 			}
-		},
-	)
-}
-
-/*
-get function returns always last element
-TODO: write changes for return first element
-*/
-func (t *tree[T]) get(parent *treeNode[T], path []string, match compare[T]) (result *treeNode[T]) {
-	parentIndex := 0
-	if parent != nil {
-		parentIndex = parent.index
+			j = t.nodes[j].next
+		}
+		if j == -1 {
+			//not found
+			return nil
+		}
+		parentIndex = j
 	}
 
-	t._get(parentIndex, path[:], match, func(node *treeNode[T]) {
-		result = node
-	})
-	return
-}
-
-func (t *tree[T]) getAll(parent *treeNode[T], path []string, match compare[T]) (result []*treeNode[T]) {
-	parentIndex := 0
-	if parent != nil {
-		parentIndex = parent.index
-	}
-
-	t._get(parentIndex, path[:], match, func(node *treeNode[T]) {
-		result = append(result, node)
-	})
-	return
+	return &t.nodes[parentIndex]
 }
 
 /* Printing Function */
@@ -142,74 +166,4 @@ func (t *tree[T]) printRaw(f func(T) string) string {
 		buf.WriteString(fmt.Sprintf("\n%d:<%d,%d,%d>:%s", i, node.first, node.last, node.next, f(node.data)))
 	}
 	return buf.String()
-}
-
-/*
-func (t *tree[T]) getFirst(parent *treeNode[T], path []string, match compare[T]) (result *treeNode[T]) {
-	parentIndex := 0
-	if parent != nil {
-		parentIndex = parent.index
-	}
-
-	stack := make([]int, len(path))
-	var pathIndex int
-
-	for pathIndex != -1 {
-		var index int
-		if stack[pathIndex] == 0 {
-			index = t.nodes[parentIndex].first
-		} else {
-			index = stack[pathIndex]
-		}
-
-		//get child index
-		for ; index != -1; index = t.nodes[index].next {
-			if match == nil || match(path[pathIndex], t.nodes[index].data) {
-				//found
-				break
-			}
-		}
-
-		if index == -1 {
-			//not found, do back track
-			stack[pathIndex] = 0
-			pathIndex--
-		} else {
-			stack[pathIndex] = index
-			pathIndex++
-			if pathIndex == len(path) {
-				return &t.nodes[index]
-			}
-		}
-	}
-
-	return nil
-}
-*/
-
-func (t *tree[T]) getChild(parent *treeNode[T], child string, match compare[T]) (result *treeNode[T]) {
-	parentIndex := 0
-	if parent != nil {
-		parentIndex = parent.index
-	}
-
-	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
-		if match == nil || match(child, t.nodes[i].data) {
-			return &t.nodes[i]
-		}
-	}
-	return nil
-}
-
-func (t *tree[T]) getNext(sibling *treeNode[T], node string, match compare[T]) (result *treeNode[T]) {
-	if sibling == nil {
-		return nil
-	}
-
-	for i := t.nodes[sibling.index].next; i != -1; i = t.nodes[i].next {
-		if match == nil || match(node, t.nodes[i].data) {
-			return &t.nodes[i]
-		}
-	}
-	return nil
 }
