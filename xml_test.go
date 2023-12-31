@@ -175,11 +175,11 @@ func TestXMLReader1(t *testing.T) {
 	t.Logf("\nXML:\n%s", xmldoc)
 
 	for _, element := range xmlReader.FindElements(nil, "Catalog", "Book") {
-		t.Logf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.GetAttributeValue(element, "id"), xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.SelectAttrValue(element, "id"), xmlReader.Text(element, true))
 	}
 
 	for _, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Author") {
-		t.Logf("\n/Catalog/Book/Author = %v", xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book/Author = %v", xmlReader.Text(element, true))
 	}
 }
 
@@ -220,10 +220,10 @@ func TestXMLReader2(t *testing.T) {
 	t.Logf("\nXML:\n%s", xmldoc)
 
 	for i, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Author") {
-		t.Logf("\n/Catalog/Book/Author[%d] = %v", i, xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book/Author[%d] = %v", i, xmlReader.Text(element, true))
 	}
 
 	for i, element := range xmlReader.FindElements(nil, "Catalog", "Book", "Genre") {
-		t.Logf("\n/Catalog/Book/Genre[%d] = %v", i, xmlReader.GetText(element, true))
+		t.Logf("\n/Catalog/Book/Genre[%d] = %v", i, xmlReader.Text(element, true))
 	}
 }

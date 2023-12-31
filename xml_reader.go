@@ -52,7 +52,7 @@ func (xr *XMLReader) FindElements(parent *Element, path ...string) (result []*El
 	return xr.tree.getPathNodes(parent, path...)
 }
 
-func (xr *XMLReader) GetAttribute(node *Element, key string) *Attribute {
+func (xr *XMLReader) SelectAttr(node *Element, key string) *Attribute {
 	attr := node.data.ParseAttribute(xr.in)
 	for _, at := range attr {
 		if bytes.Equal(at.Key(xr.in), []byte(key)) {
@@ -62,14 +62,14 @@ func (xr *XMLReader) GetAttribute(node *Element, key string) *Attribute {
 	return nil
 }
 
-func (xr *XMLReader) GetAttributeValue(node *Element, key string) (value string) {
-	if attr := xr.GetAttribute(node, key); attr != nil {
+func (xr *XMLReader) SelectAttrValue(node *Element, key string) (value string) {
+	if attr := xr.SelectAttr(node, key); attr != nil {
 		return string(attr.Value(xr.in))
 	}
 	return ""
 }
 
-func (xr *XMLReader) GetText(node *Element, removeCDATA bool) (value string) {
+func (xr *XMLReader) Text(node *Element, removeCDATA bool) (value string) {
 	return string(node.data.Text(xr.in, removeCDATA))
 }
 

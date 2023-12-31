@@ -38,15 +38,15 @@ func TestXMLUpdater(t *testing.T) {
 	updater.RemoveElement(reader.FindElement(nil, "a", "c"))
 
 	//replace full element
-	updater.ReplaceElement(elementB, `<new_b>new_b_data</new_b>`)
+	updater.ReplaceElement(elementB, NewXMLTag("new_b", "new_b_data"))
 
 	//append or prepend new xml tag
-	updater.PrependElement(elementF, `<f1>prepend_data</f1>`)
-	updater.AppendElement(elementF, `<f2>append_data</f2>`)
+	updater.PrependElement(elementF, NewXMLTag("f1", "prepend_data"))
+	updater.AppendElement(elementF, NewXMLTag("f2", "append_data"))
 
 	//append or prepend new xml tag in existing which has text
-	updater.PrependElement(elementG, `<g1>prepend_tag</g1>`)
-	updater.AppendElement(elementG, `<g2>append_tag</g2>`)
+	updater.PrependElement(elementG, NewXMLTag("g1", "prepend_tag"))
+	updater.AppendElement(elementG, NewXMLTag("g2", "append_tag"))
 
 	//update text
 	updater.UpdateText(elementG, "new-g-data")
@@ -55,12 +55,12 @@ func TestXMLUpdater(t *testing.T) {
 	updater.AddAttribute(elementF, "", "fk1", "fv1")
 
 	//update attribute name and value
-	gk1 := reader.GetAttribute(elementG, "gk1")
+	gk1 := reader.SelectAttr(elementG, "gk1")
 	updater.UpdateAttributeName(gk1, "gk11")
 	updater.UpdateAttributeValue(gk1, "false")
 
 	//remove attribute
-	gk2 := reader.GetAttribute(elementG, "gk2")
+	gk2 := reader.SelectAttr(elementG, "gk2")
 	updater.RemoveAttribute(gk2)
 
 	//Build Updated XML File
@@ -96,7 +96,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.AppendElement(reader.FindElement(nil, "a"), `<empty_tag/>`)
+					xu.AppendElement(reader.FindElement(nil, "a"), NewXMLTag("", "<empty_tag/>"))
 				},
 			},
 			want: `<a><empty_tag/></a>`,
@@ -108,7 +108,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.AppendElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.AppendElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><tag>tagdata</tag></a>`,
@@ -118,7 +118,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, in []byte) {
-					xu.AppendElement(nil, `<tag>tagdata</tag>`)
+					xu.AppendElement(nil, NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a></a>`,
@@ -130,7 +130,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.AppendElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.AppendElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a>test_data<tag>tagdata</tag></a>`,
@@ -142,7 +142,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.AppendElement(reader.FindElement(nil, "a", "b", "c"), `<tag>tagdata</tag>`)
+					xu.AppendElement(reader.FindElement(nil, "a", "b", "c"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><b><c>cdata<tag>tagdata</tag></c></b></a>`,
@@ -154,7 +154,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.AppendElement(reader.FindElement(nil, "a", "b"), `<tag>tagdata</tag>`)
+					xu.AppendElement(reader.FindElement(nil, "a", "b"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><b><c>cdata</c><tag>tagdata</tag></b></a>`,
@@ -167,8 +167,8 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
 					elementA := reader.FindElement(nil, "a")
-					xu.AppendElement(elementA, `<b>two</b>`)
-					xu.AppendElement(elementA, `<b>three</b>`)
+					xu.AppendElement(elementA, NewXMLTag("b", "two"))
+					xu.AppendElement(elementA, NewXMLTag("b", "three"))
 				},
 			},
 			want: `<a><b>one</b><b>two</b><b>three</b></a>`,
@@ -182,8 +182,8 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 					_ = reader.Parse(in)
 					elementB := reader.FindElement(nil, "a", "b")
 					elementC := reader.FindElement(nil, "a", "b", "c")
-					xu.AppendElement(elementB, `<b1>b1_data</b1>`)
-					xu.AppendElement(elementC, `<c1>c1_data</c1>`)
+					xu.AppendElement(elementB, NewXMLTag("b1", "b1_data"))
+					xu.AppendElement(elementC, NewXMLTag("c1", "c1_data"))
 				},
 			},
 			want: `<a><b><c>cdata<c1>c1_data</c1></c><b1>b1_data</b1></b></a>`,
@@ -241,7 +241,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.PrependElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.PrependElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><tag>tagdata</tag></a>`,
@@ -251,7 +251,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, in []byte) {
-					xu.PrependElement(nil, `<tag>tagdata</tag>`)
+					xu.PrependElement(nil, NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a></a>`,
@@ -263,7 +263,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.PrependElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.PrependElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><tag>tagdata</tag>test_data</a>`,
@@ -275,7 +275,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.PrependElement(reader.FindElement(nil, "a", "b", "c"), `<tag>tagdata</tag>`)
+					xu.PrependElement(reader.FindElement(nil, "a", "b", "c"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><b><c><tag>tagdata</tag>cdata</c></b></a>`,
@@ -287,7 +287,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.PrependElement(reader.FindElement(nil, "a", "b"), `<tag>tagdata</tag>`)
+					xu.PrependElement(reader.FindElement(nil, "a", "b"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><b><tag>tagdata</tag><c>cdata</c></b></a>`,
@@ -300,8 +300,8 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
 					elementA := reader.FindElement(nil, "a")
-					xu.PrependElement(elementA, `<b>two</b>`)
-					xu.PrependElement(elementA, `<b>three</b>`)
+					xu.PrependElement(elementA, NewXMLTag("b", "two"))
+					xu.PrependElement(elementA, NewXMLTag("b", "three"))
 				},
 			},
 			want: `<a><b>two</b><b>three</b><b>one</b></a>`,
@@ -315,8 +315,8 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 					_ = reader.Parse(in)
 					elementB := reader.FindElement(nil, "a", "b")
 					elementC := reader.FindElement(nil, "a", "b", "c")
-					xu.PrependElement(elementB, `<b1>b1_data</b1>`)
-					xu.PrependElement(elementC, `<c1>c1_data</c1>`)
+					xu.PrependElement(elementB, NewXMLTag("b1", "b1_data"))
+					xu.PrependElement(elementC, NewXMLTag("c1", "c1_data"))
 				},
 			},
 			want: `<a><b><b1>b1_data</b1><c><c1>c1_data</c1>cdata</c></b></a>`,
@@ -360,7 +360,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.ReplaceElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.ReplaceElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<tag>tagdata</tag>`,
@@ -372,7 +372,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.ReplaceElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.ReplaceElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<tag>tagdata</tag>`,
@@ -382,7 +382,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, in []byte) {
-					xu.PrependElement(nil, `<tag>tagdata</tag>`)
+					xu.PrependElement(nil, NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a></a>`,
@@ -394,7 +394,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.ReplaceElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
+					xu.ReplaceElement(reader.FindElement(nil, "a"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<tag>tagdata</tag>`,
@@ -406,7 +406,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.ReplaceElement(reader.FindElement(nil, "a", "b", "c"), `<tag>tagdata</tag>`)
+					xu.ReplaceElement(reader.FindElement(nil, "a", "b", "c"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><b><tag>tagdata</tag></b></a>`,
@@ -418,7 +418,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, in []byte) {
 					reader := NewXMLReader(nil)
 					_ = reader.Parse(in)
-					xu.ReplaceElement(reader.FindElement(nil, "a", "b"), `<tag>tagdata</tag>`)
+					xu.ReplaceElement(reader.FindElement(nil, "a", "b"), NewXMLTag("tag", "tagdata"))
 				},
 			},
 			want: `<a><tag>tagdata</tag></a>`,
@@ -432,8 +432,8 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 						reader := NewXMLReader(nil)
 						_ = reader.Parse(in)
 						elementA := reader.FindElement(nil, "a")
-						xu.ReplaceElement(elementA, `<b>two</b>`)
-						xu.ReplaceElement(elementA, `<b>three</b>`)
+						xu.ReplaceElement(elementA, NewXMLTag("b", "two"))
+						xu.ReplaceElement(elementA, NewXMLTag("b", "three"))
 					},
 				},
 				want: ``,
@@ -447,8 +447,8 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 						_ = reader.Parse(in)
 						elementB := reader.FindElement(nil, "a", "b")
 						elementC := reader.FindElement(nil, "a", "b", "c")
-						xu.ReplaceElement(elementB, `<b1>b1_data</b1>`)
-						xu.ReplaceElement(elementC, `<c1>c1_data</c1>`)
+						xu.ReplaceElement(elementB, NewXMLTag("b1", "b1_data"))
+						xu.ReplaceElement(elementC, NewXMLTag("c1", "c1_data"))
 					},
 				},
 				want: ``,
