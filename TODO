@@ -1,0 +1,19 @@
+* unit test cases writing
+  * xml_tokenizer 
+  * xml_reader
+  * xml_updater
+  * xml_tokens [done]
+  * xpath
+* xmlupdater
+    * do not allow overlapping operations
+    * inline tag updater
+* xpath
+    * support for * matching
+* xmlreader / tree
+    * get
+      * first found match
+      * '*' matching pattern
+* bugs
+  * text: may contains inner xml, which shouldn't get returned
+  * text: <tag><![CDATA[ data ]]> any data <![CDATA[ other text]]></tag>, current returns "data ]]> any data <![CDATA[ other text" which is invalid
+
