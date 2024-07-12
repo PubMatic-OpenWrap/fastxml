@@ -40,20 +40,20 @@ func (n *xpath) get(key string) (val *xpath) {
 	return n.childs[key]
 }
 
-func (n *xpath) _print(buf *bytes.Buffer, indent int) {
+func (n *xpath) print(buf *bytes.Buffer, indent int) {
 	buf.WriteByte('\n')
 	buf.WriteString(strings.Repeat("\t", indent))
 	buf.WriteByte('|')
 	buf.WriteString(n.data)
 	indent++
 	for _, child := range n.childs {
-		child._print(buf, indent)
+		child.print(buf, indent)
 	}
 }
 
-func (n *xpath) print() string {
+func (n *xpath) String() string {
 	buf := bytes.Buffer{}
-	n._print(&buf, 0)
+	n.print(&buf, 0)
 	return buf.String()
 }
 

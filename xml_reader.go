@@ -21,11 +21,15 @@ func NewXMLReader(path *xpath) *XMLReader {
 }
 
 func (xr *XMLReader) match(name string, token XMLToken) bool {
-	return bytes.Equal(token.Name(xr.in), []byte(name))
+	return name == "*" || bytes.Equal(token.Name(xr.in), []byte(name))
 }
 
 func (xr *XMLReader) tokenHandler(name string, parent *Element, child Element) {
 	xr.tree.insert(parent, child)
+}
+
+func (xr *XMLReader) RawXML() []byte {
+	return xr.in
 }
 
 func (xr *XMLReader) Parse(in []byte) error {
@@ -69,8 +73,36 @@ func (xr *XMLReader) SelectAttrValue(node *Element, key string) (value string) {
 	return ""
 }
 
-func (xr *XMLReader) Text(node *Element, removeCDATA bool) (value string) {
-	return string(node.data.Text(xr.in, removeCDATA))
+func (xr *XMLReader) Text(node *Element) (value string) {
+	if !node.data.IsCDATA(xr.in) {
+		//unescape and return
+		return string(unescapeBytes(node.data.Text(xr.in)))
+	}
+	return string(node.data.Text(xr.in))
+}
+
+func (xr *XMLReader) RawText(node *Element) (value string) {
+	return string(node.data.Text(xr.in))
+}
+
+func (xr *XMLReader) Name(node *Element) (value string) {
+	return string(node.data.Name(xr.in))
+}
+
+func (xr *XMLReader) NSName(node *Element) (value string) {
+	return string(node.data.NSName(xr.in))
+}
+
+func (xr *XMLReader) IsCDATA(node *Element) bool {
+	return node.data.IsCDATA(xr.in)
+}
+
+func (xr *XMLReader) IsLeaf(node *Element) bool {
+	return xr.tree.isLeaf(node)
+}
+
+func (xr *XMLReader) Iterate(cb func(*Element)) {
+	xr.tree.iterate(cb)
 }
 
 func (xr *XMLReader) getXML(in []byte) string {
@@ -80,5 +112,6 @@ func (xr *XMLReader) getXML(in []byte) string {
 		buf.Write(in[start:node.data.end.ei])
 		start = node.data.end.ei
 	}
+	buf.Write(in[start:])
 	return buf.String()
 }
