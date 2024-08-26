@@ -1,12 +1,23 @@
 package fastxml
 
-import "bytes"
+import (
+	"bytes"
+)
 
-var whitespace [256]bool //<space>, \r, \n, \t
-var alnum [256]bool      //a-z, A-Z, 0-9
-var alpha [256]bool      //a-z, A-Z
-var num [256]bool        //0-9
-var name [256]bool       //a-z, A-Z, 0-9, _, -
+var (
+	whitespace    [256]bool //<space>, \r, \n, \t
+	alnum         [256]bool //a-z, A-Z, 0-9
+	alpha         [256]bool //a-z, A-Z
+	num           [256]bool //0-9
+	name          [256]bool //a-z, A-Z, 0-9, _, -
+	encodingChars = map[string]byte{
+		"amp;":  '&',
+		"apos;": '\'',
+		"lt;":   '<',
+		"gt;":   '>',
+		"quot;": '"',
+	}
+)
 
 func init() {
 	whitespace[' '] = true
@@ -36,9 +47,9 @@ func init() {
 	}
 }
 
-func _trimCDATA(in []byte, start, end int) (si, ei int) {
+func _trimCDATA(in []byte, start, end int) (int, int, bool) {
 	//`#whitespaces#<![CDATA[ data ]]>#whitespaces#`
-	si, ei = _trim(in, start, end)
+	si, ei := _trim(in, start, end)
 	//search for <![CDATA[
 	found := bytes.HasPrefix(in[si:ei], []byte(cdataStart))
 	if found {
@@ -46,9 +57,9 @@ func _trimCDATA(in []byte, start, end int) (si, ei int) {
 		ei = ei - len(cdataEnd)
 		//if si+len(cdataStart) > ei-len(cdataEnd) {}
 		//si, ei = _trim(in, si, ei)
-		return si, ei
+		return si, ei, found
 	}
-	return start, end
+	return start, end, found
 }
 
 func _trim(in []byte, start, end int) (int, int) {
@@ -59,4 +70,83 @@ func _trim(in []byte, start, end int) (int, int) {
 	for ; end > start && whitespace[in[end-1]]; end-- {
 	}
 	return start, end
+}
+
+// escape writes an escaped version of a string to the writer.
+func escape[T []byte | string](w Writer, s T) {
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		switch ch {
+		case '&':
+			w.WriteString("&amp;")
+		case '<':
+			w.WriteString("&lt;")
+		case '>':
+			w.WriteString("&gt;")
+		case '\'':
+			w.WriteString("&apos;")
+		case '"':
+			w.WriteString("&quot;")
+		default:
+			w.WriteByte(ch)
+		}
+	}
+}
+
+func unescape(w Writer, s []byte) {
+	//TODO: use prefix tree for below if these functionality extends
+
+	for i := 0; i < len(s); i++ {
+		if s[i] != '&' {
+			w.WriteByte(s[i])
+			continue
+		}
+
+		// Check if the & is followed by a known entity
+		found := false
+		for key, val := range encodingChars {
+			if i+len(key) < len(s) && bytes.HasPrefix(s[i+1:], []byte(key)) {
+				w.WriteByte(val)
+				i += len(key)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			w.WriteByte(s[i])
+		}
+	}
+}
+
+func unescapeBytes(s []byte) []byte {
+	b := bytes.Buffer{}
+	unescape(&b, s)
+	return b.Bytes()
+}
+
+func quoteEscape[T []byte | string](w Writer, s T) {
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		if ch == '"' || ch == '\\' {
+			w.WriteByte('\\')
+		}
+		w.WriteByte(ch)
+	}
+}
+
+func quoteUnescape[T []byte | string](w Writer, s T) {
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		if ch == '\\' {
+			if i+1 < len(s) {
+				nextCh := s[i+1]
+				if nextCh == '\\' || nextCh == '"' || nextCh == '\'' {
+					i++
+					ch = nextCh
+				}
+			}
+		}
+		w.WriteByte(ch)
+	}
 }

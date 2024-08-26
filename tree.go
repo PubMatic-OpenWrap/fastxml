@@ -56,10 +56,18 @@ func (t *tree[T]) reset() {
 	t.nodes = t.nodes[:0]
 }
 
+func (t *tree[T]) isLeaf(node *treeNode[T]) bool {
+	return node != nil && t.nodes[node.index].first == -1
+}
+
 func (t *tree[T]) getChild(parent *treeNode[T], child string) (result *treeNode[T]) {
 	parentIndex := 0
 	if parent != nil {
 		parentIndex = parent.index
+	}
+
+	if parentIndex >= len(t.nodes) {
+		return nil
 	}
 
 	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
@@ -76,6 +84,10 @@ func (t *tree[T]) getAllChild(parent *treeNode[T], child string) (result []*tree
 		parentIndex = parent.index
 	}
 
+	if parentIndex >= len(t.nodes) {
+		return nil
+	}
+
 	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
 		if t.match != nil && t.match(child, t.nodes[i].data) {
 			result = append(result, &t.nodes[i])
@@ -85,11 +97,16 @@ func (t *tree[T]) getAllChild(parent *treeNode[T], child string) (result []*tree
 }
 
 func (t *tree[T]) getChilds(parent *treeNode[T]) (result []*treeNode[T]) {
-	index := 0
+	parentIndex := 0
 	if parent != nil {
-		index = parent.index
+		parentIndex = parent.index
 	}
-	for i := t.nodes[index].first; i != -1; i = t.nodes[i].next {
+
+	if parentIndex >= len(t.nodes) {
+		return nil
+	}
+
+	for i := t.nodes[parentIndex].first; i != -1; i = t.nodes[i].next {
 		result = append(result, &t.nodes[i])
 	}
 	return
@@ -108,11 +125,14 @@ func (t *tree[T]) _getPath(parent int, result *[]*treeNode[T], path ...string) {
 }
 
 func (t *tree[T]) getPathNodes(parent *treeNode[T], path ...string) (result []*treeNode[T]) {
-	index := 0
+	parentIndex := 0
 	if parent != nil {
-		index = parent.index
+		parentIndex = parent.index
 	}
-	t._getPath(index, &result, path...)
+	if parentIndex >= len(t.nodes) {
+		return nil
+	}
+	t._getPath(parentIndex, &result, path...)
 	return
 }
 
@@ -120,6 +140,10 @@ func (t *tree[T]) getPathNode(parent *treeNode[T], path ...string) (result *tree
 	parentIndex := 0
 	if parent != nil {
 		parentIndex = parent.index
+	}
+
+	if parentIndex >= len(t.nodes) {
+		return nil
 	}
 
 	for iPath := 0; iPath < len(path); iPath++ {
@@ -139,6 +163,12 @@ func (t *tree[T]) getPathNode(parent *treeNode[T], path ...string) (result *tree
 	}
 
 	return &t.nodes[parentIndex]
+}
+
+func (t *tree[T]) iterate(f func(*treeNode[T])) {
+	for i := range t.nodes {
+		f(&t.nodes[i])
+	}
 }
 
 /* Printing Function */

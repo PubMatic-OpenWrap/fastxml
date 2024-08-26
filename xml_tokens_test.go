@@ -22,42 +22,42 @@ func Test_getTokenType(t *testing.T) {
 			args: []args{
 				{in: `<test/>`, index: 1},
 			},
-			want: StartXMLToken,
+			want: startXMLToken,
 		},
 		{
 			name: `end_tag`,
 			args: []args{
 				{in: `</test>`, index: 1},
 			},
-			want: EndXMLToken,
+			want: endXMLToken,
 		},
 		{
 			name: `processing_tag`,
 			args: []args{
 				{in: `<?xml version = "1.0" encoding = "UTF-8" standalone = "no" ?>`, index: 1},
 			},
-			want: ProcessingXMLToken,
+			want: processingXMLToken,
 		},
 		{
 			name: `comments_tag`,
 			args: []args{
 				{in: `<!-- commented code -->`, index: 1},
 			},
-			want: CommentsXMLToken,
+			want: commentsXMLToken,
 		},
 		{
 			name: `cdata_tag`,
 			args: []args{
 				{in: `<![CDATA[test]]>`, index: 1},
 			},
-			want: CDATAXMLToken,
+			want: cdataXMLToken,
 		},
 		{
 			name: `doctype_tag`,
 			args: []args{
 				{in: `<!DOCTYPE list SYSTEM "example.dtd">`, index: 1},
 			},
-			want: DOCTYPEXMLToken,
+			want: doctypeXMLToken,
 		},
 		{
 			name: `invalid_tag`,
@@ -72,7 +72,7 @@ func Test_getTokenType(t *testing.T) {
 				{in: `<![CDATAtest]]>`, index: 1},
 				{in: `<! DOCTYPE list SYSTEM "example.dtd">`, index: 1},
 			},
-			want: UnknownXMLToken,
+			want: unknownXMLToken,
 		},
 
 		// TODO: Add test cases.
@@ -104,187 +104,187 @@ func Test_getTokenEndIndex(t *testing.T) {
 	}{
 		{
 			name: `start_token_empty_string`,
-			args: args{in: ``, ttype: StartXMLToken},
+			args: args{in: ``, ttype: startXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `start_token_first_char`,
-			args: args{in: `>`, ttype: StartXMLToken},
+			args: args{in: `>`, ttype: startXMLToken},
 			want: want{index: 1, inline: false},
 		},
 		{
 			name: `start_token_valid`,
-			args: args{in: `<test>dummy_text`, ttype: StartXMLToken},
+			args: args{in: `<test>dummy_text`, ttype: startXMLToken},
 			want: want{index: 6, inline: false},
 		},
 		{
 			name: `start_token_inline`,
-			args: args{in: `<test/>dummy_text`, ttype: StartXMLToken},
+			args: args{in: `<test/>dummy_text`, ttype: startXMLToken},
 			want: want{index: 7, inline: true},
 		},
 		{
 			name: `start_token_not_found`,
-			args: args{in: `<test`, ttype: StartXMLToken},
+			args: args{in: `<test`, ttype: startXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `start_token_empty_inline`,
-			args: args{in: `/>`, ttype: StartXMLToken},
+			args: args{in: `/>`, ttype: startXMLToken},
 			want: want{index: 2, inline: true},
 		},
 		{
 			name: `end_token_empty`,
-			args: args{in: ``, ttype: EndXMLToken},
+			args: args{in: ``, ttype: endXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `end_token_first_char`,
-			args: args{in: `>`, ttype: EndXMLToken},
+			args: args{in: `>`, ttype: endXMLToken},
 			want: want{index: 1, inline: false},
 		},
 		{
 			name: `end_token_valid`,
-			args: args{in: `</test>dummy_text`, ttype: EndXMLToken},
+			args: args{in: `</test>dummy_text`, ttype: endXMLToken},
 			want: want{index: 7, inline: false},
 		},
 		{
 			name: `end_token_not_found`,
-			args: args{in: `</test`, ttype: EndXMLToken},
+			args: args{in: `</test`, ttype: endXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `preprocessing_token_empty`,
-			args: args{in: ``, ttype: ProcessingXMLToken},
+			args: args{in: ``, ttype: processingXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `preprocessing_token_first_char`,
-			args: args{in: `?>`, ttype: ProcessingXMLToken},
+			args: args{in: `?>`, ttype: processingXMLToken},
 			want: want{index: 2, inline: false},
 		},
 		{
 			name: `preprocessing_token_valid`,
-			args: args{in: `<? test ?>dummy_test`, ttype: ProcessingXMLToken},
+			args: args{in: `<? test ?>dummy_test`, ttype: processingXMLToken},
 			want: want{index: 10, inline: false},
 		},
 		{
 			name: `preprocessing_token_not_found`,
-			args: args{in: `<? test `, ttype: ProcessingXMLToken},
+			args: args{in: `<? test `, ttype: processingXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `preprocessing_token_missing_questionmark`,
-			args: args{in: `<? test >`, ttype: ProcessingXMLToken},
+			args: args{in: `<? test >`, ttype: processingXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `comments_token_empty`,
-			args: args{in: ``, ttype: CommentsXMLToken},
+			args: args{in: ``, ttype: commentsXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `comments_token_first_char`,
-			args: args{in: `-->`, ttype: CommentsXMLToken},
+			args: args{in: `-->`, ttype: commentsXMLToken},
 			want: want{index: 3, inline: false},
 		},
 		{
 			name: `comments_token_first_char_missing_dashes`,
-			args: args{in: `>`, ttype: CommentsXMLToken},
+			args: args{in: `>`, ttype: commentsXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `comments_token_first_char_missing_one_dash`,
-			args: args{in: `->`, ttype: CommentsXMLToken},
+			args: args{in: `->`, ttype: commentsXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `comments_token_valid`,
-			args: args{in: `<!-- test -->dummy_text`, ttype: CommentsXMLToken},
+			args: args{in: `<!-- test -->dummy_text`, ttype: commentsXMLToken},
 			want: want{index: 13, inline: false},
 		},
 		{
 			name: `comments_token_not_found`,
-			args: args{in: `<!-- test`, ttype: CommentsXMLToken},
+			args: args{in: `<!-- test`, ttype: commentsXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `comments_token_contains_gt`,
-			args: args{in: `<!-- test > -->dummy_text`, ttype: CommentsXMLToken},
+			args: args{in: `<!-- test > -->dummy_text`, ttype: commentsXMLToken},
 			want: want{index: 15, inline: false},
 		},
 		{
 			name: `comments_token_missing_both_dashes`,
-			args: args{in: `<!-- test >`, ttype: CommentsXMLToken},
+			args: args{in: `<!-- test >`, ttype: commentsXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `comments_token_missing_first_dash`,
-			args: args{in: `<!-- test ->`, ttype: CommentsXMLToken},
+			args: args{in: `<!-- test ->`, ttype: commentsXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `cdata_token_empty`,
-			args: args{in: ``, ttype: CDATAXMLToken},
+			args: args{in: ``, ttype: cdataXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `cdata_token_first_char`,
-			args: args{in: `]]>`, ttype: CDATAXMLToken},
+			args: args{in: `]]>`, ttype: cdataXMLToken},
 			want: want{index: 3, inline: false},
 		},
 		{
 			name: `cdata_token_first_char_missing_one_bracket`,
-			args: args{in: `]>`, ttype: CDATAXMLToken},
+			args: args{in: `]>`, ttype: cdataXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `cdata_token_first_missing_all_brackets`,
-			args: args{in: `>`, ttype: CDATAXMLToken},
+			args: args{in: `>`, ttype: cdataXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `cdata_token_valid`,
-			args: args{in: `<![CDATA[ test ]]>`, ttype: CDATAXMLToken},
+			args: args{in: `<![CDATA[ test ]]>`, ttype: cdataXMLToken},
 			want: want{index: 18, inline: false},
 		},
 		{
 			name: `cdata_token_not_found`,
-			args: args{in: `<![CDATA[ test ]]`, ttype: CDATAXMLToken},
+			args: args{in: `<![CDATA[ test ]]`, ttype: cdataXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `doctype_token_empty`,
-			args: args{in: ``, ttype: DOCTYPEXMLToken},
+			args: args{in: ``, ttype: doctypeXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `doctype_token_valid`,
-			args: args{in: `<!DOCTYPE test>`, ttype: DOCTYPEXMLToken},
+			args: args{in: `<!DOCTYPE test>`, ttype: doctypeXMLToken},
 			want: want{index: 15, inline: false},
 		},
 		{
 			name: `doctype_token_with_bracket`,
-			args: args{in: `<!DOCTYPE test[<!ELEMENT note>]>`, ttype: DOCTYPEXMLToken},
+			args: args{in: `<!DOCTYPE test[<!ELEMENT note>]>`, ttype: doctypeXMLToken},
 			want: want{index: 32, inline: false},
 		},
 		{
 			name: `doctype_token_with_multiple_bracket`,
-			args: args{in: `<!DOCTYPE test[<!ELEMENT note [<!ELEMENT note1>]>]>`, ttype: DOCTYPEXMLToken},
+			args: args{in: `<!DOCTYPE test[<!ELEMENT note [<!ELEMENT note1>]>]>`, ttype: doctypeXMLToken},
 			want: want{index: 49, inline: false},
 		},
 		{
 			name: `unknown_token_empty`,
-			args: args{in: ``, ttype: UnknownXMLToken},
+			args: args{in: ``, ttype: unknownXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		{
 			name: `unknown_token_valid`,
-			args: args{in: `test>`, ttype: UnknownXMLToken},
+			args: args{in: `test>`, ttype: unknownXMLToken},
 			want: want{index: 5, inline: false},
 		},
 		{
 			name: `unknown_token_not_found`,
-			args: args{in: `test`, ttype: UnknownXMLToken},
+			args: args{in: `test`, ttype: unknownXMLToken},
 			want: want{index: -1, inline: false},
 		},
 		// TODO: Add test cases.

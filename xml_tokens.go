@@ -4,25 +4,33 @@ import (
 	"bytes"
 )
 
+type XMLEscapingMode int
+
+const (
+	NoEscaping XMLEscapingMode = iota
+	XMLEscapeMode
+	XMLUnescapeMode
+)
+
 type xmlTokenType int
 
 const (
-	UnknownXMLToken    xmlTokenType = iota //unknown token
-	StartXMLToken                          //<ns:xmltag k1="v1" k2='v2'>
-	InlineXMLToken                         //<ns:xmltag/>
-	EndXMLToken                            //</ns:xmltag>
-	ProcessingXMLToken                     //<? text ?>
-	CommentsXMLToken                       //<!-- text -->
-	CDATAXMLToken                          //<![CDATA[ text ]]>
-	DOCTYPEXMLToken                        //<!DOCTYPE [ text ]>
-	TextToken                              //text
+	unknownXMLToken    xmlTokenType = iota //unknown token
+	startXMLToken                          //<ns:xmltag k1="v1" k2='v2'>
+	inlineXMLToken                         //<ns:xmltag/>
+	endXMLToken                            //</ns:xmltag>
+	processingXMLToken                     //<? text ?>
+	commentsXMLToken                       //<!-- text -->
+	cdataXMLToken                          //<![CDATA[ text ]]>
+	doctypeXMLToken                        //<!DOCTYPE [ text ]>
+	textToken                              //text
 
-	MaxXMLTokenType
+	maxXMLTokenType
 )
 
-const (
-	cdataStart = "<![CDATA["
-	cdataEnd   = "]]>"
+var (
+	cdataStart = []byte("<![CDATA[")
+	cdataEnd   = []byte("]]>")
 )
 
 func (t xmlTokenType) String() string {
@@ -46,6 +54,7 @@ type xmlTagIndex struct {
 type XMLToken struct {
 	start, end xmlTagIndex
 	name, text xmlTagIndex
+	cdata      bool
 }
 
 func NewXMLToken(ssi, sei, esi, eei int) XMLToken {
@@ -55,15 +64,12 @@ func NewXMLToken(ssi, sei, esi, eei int) XMLToken {
 	}
 }
 
-func (t *XMLToken) Text(in []byte, removeCDATA bool) []byte {
+func (t *XMLToken) Text(in []byte) []byte {
 	if t.start.si == t.end.si {
 		return nil //inline tag doesn't have text
 	}
 	if t.text.si == 0 {
-		t.text.si, t.text.ei = t.start.ei, t.end.si
-		if removeCDATA {
-			t.text.si, t.text.ei = _trimCDATA(in, t.text.si, t.text.ei)
-		}
+		t.text.si, t.text.ei, t.cdata = _trimCDATA(in, t.start.ei, t.end.si)
 	}
 	return in[t.text.si:t.text.ei]
 }
@@ -73,6 +79,13 @@ func (t *XMLToken) Name(in []byte) []byte {
 		t.name.si, t.name.ei = getTokenNameIndex(in, t.start.si+1)
 	}
 	return in[t.name.si:t.name.ei]
+}
+
+func (t *XMLToken) NSName(in []byte) []byte {
+	if t.name.si == 0 {
+		t.name.si, t.name.ei = getTokenNameIndex(in, t.start.si+1)
+	}
+	return in[t.start.si+1 : t.name.ei]
 }
 
 func (t XMLToken) ParseAttribute(in []byte) []Attribute {
@@ -99,49 +112,59 @@ func (t XMLToken) TagOffset() (si, ei int) {
 	return t.start.si, t.end.ei
 }
 
+func (t XMLToken) IsCDATA(in []byte) bool {
+	if t.start.si == t.end.si {
+		return false //inline tag doesn't have text
+	}
+	if t.text.si == 0 {
+		t.text.si, t.text.ei, t.cdata = _trimCDATA(in, t.start.ei, t.end.si)
+	}
+	return t.cdata
+}
+
 func getTokenType(in []byte, index int) xmlTokenType {
 	if index >= len(in) {
 		//TODO: donot check for negative values,
 		//as this is used by internally and this condition won't happens
-		return UnknownXMLToken
+		return unknownXMLToken
 	}
 	//TODO: check if removing whitespace required
 	ch := in[index]
 	switch ch {
 	case '/':
-		return EndXMLToken
+		return endXMLToken
 	case '!':
 		//TODO: check if removing whitespace required
 		index++
 		if index >= len(in) {
-			return UnknownXMLToken
+			return unknownXMLToken
 		}
 		ch1 := in[index]
 		switch ch1 {
 		case '-':
 			if index+1 < len(in) && in[index+1] == '-' {
 				//check for full comment <!--
-				return CommentsXMLToken
+				return commentsXMLToken
 			}
 		case '[':
 			if bytes.HasPrefix(in[index:], []byte(`[CDATA[`)) {
 				//check for full <![CDATA[
-				return CDATAXMLToken
+				return cdataXMLToken
 			}
 		case 'D':
 			if bytes.HasPrefix(in[index:], []byte(`DOCTYPE`)) {
 				//check for full <!DOCTYPE
-				return DOCTYPEXMLToken
+				return doctypeXMLToken
 			}
 		}
 	case '?':
-		return ProcessingXMLToken
+		return processingXMLToken
 	default:
 		if alpha[ch] {
-			return StartXMLToken
+			return startXMLToken
 		}
 	}
-	return UnknownXMLToken
+	return unknownXMLToken
 }
 
 func getTokenNameIndex(in []byte, startIndex int) (si, ei int) {
@@ -171,7 +194,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 	inline := false
 	//TODO: write token type based parsers and execute it separately
 	switch ttype {
-	case StartXMLToken:
+	case startXMLToken:
 		// read until >
 		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' {
@@ -183,7 +206,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 				break
 			}
 		}
-	case EndXMLToken:
+	case endXMLToken:
 		// read until >
 		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' {
@@ -192,7 +215,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 				break
 			}
 		}
-	case ProcessingXMLToken:
+	case processingXMLToken:
 		// read until ?>
 		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' && i > 0 && in[i-1] == '?' {
@@ -201,7 +224,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 				break
 			}
 		}
-	case CommentsXMLToken:
+	case commentsXMLToken:
 		// read until found -->
 		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' && i > 1 && in[i-1] == '-' && in[i-2] == '-' {
@@ -210,7 +233,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 				break
 			}
 		}
-	case CDATAXMLToken:
+	case cdataXMLToken:
 		// read until ]]> /*<![CDATA[ 25.00 ]]>*/
 		for i := startIndex; i < len(in); i++ {
 			if in[i] == '>' && i > 1 && in[i-1] == ']' && in[i-2] == ']' {
@@ -226,7 +249,7 @@ func getTokenEndIndex(in []byte, startIndex int, ttype xmlTokenType) (int, bool)
 				break
 			}
 		}
-	case DOCTYPEXMLToken:
+	case doctypeXMLToken:
 		/*
 			TODO:
 			1. UNDER DEVELOPMENT

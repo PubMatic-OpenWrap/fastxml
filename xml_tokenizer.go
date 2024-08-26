@@ -48,10 +48,10 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
 			}
 
 			if inlineToken {
-				ttype = EndXMLToken
+				ttype = endXMLToken
 			}
 
-			if ttype == StartXMLToken {
+			if ttype == startXMLToken {
 				//push start tag into stack and check only for endtags if those are matching to ours tag
 				token := XMLToken{
 					start: xmlTagIndex{si: i, ei: endIndex},
@@ -72,7 +72,7 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
 				}
 
 				s.push(Element{data: token, first: -1, last: -1, next: -1})
-			} else if ttype == EndXMLToken {
+			} else if ttype == endXMLToken {
 				//get start xml tag
 				foundTag := true
 				var child *Element
@@ -106,7 +106,6 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
 					//append tokens to list
 					cb(string(child.data.Name(in[:])), s.peek(), *child)
 				}
-
 				//fmt.Printf("%s:<%d,%d,%d>\n", string(child.data.Name(in)), child.data.start.si, child.data.end.ei, child.data.end.ei-child.data.start.si)
 			}
 			i = endIndex
