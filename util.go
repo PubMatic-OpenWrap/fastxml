@@ -16,6 +16,10 @@ var (
 		"lt;":   '<',
 		"gt;":   '>',
 		"quot;": '"',
+		"#39;":  '\'',
+		"#34;":  '"',
+		"#xA;":  ' ',
+		// "#xA;":  '\n',
 	}
 )
 
@@ -62,12 +66,39 @@ func _trimCDATA(in []byte, start, end int) (int, int, bool) {
 	return start, end, found
 }
 
+//	func _trim(in []byte, start, end int) (int, int) {
+//		//remove heading whitespaces
+//		for ; start < end && whitespace[in[start]]; start++ {
+//		}
+//		//remove trailing whitespaces
+//		for ; end > start && whitespace[in[end-1]]; end-- {
+//		}
+//		return start, end
+//	}
 func _trim(in []byte, start, end int) (int, int) {
 	//remove heading whitespaces
-	for ; start < end && whitespace[in[start]]; start++ {
+	for start < end {
+		if whitespace[in[start]] {
+			start++
+			continue
+		}
+		if bytes.HasPrefix(in[start:], []byte("&#xA;")) {
+			start += len("&#xA;")
+			continue
+		}
+		break
 	}
 	//remove trailing whitespaces
-	for ; end > start && whitespace[in[end-1]]; end-- {
+	for end > start {
+		if whitespace[in[end-1]] {
+			end--
+			continue
+		}
+		if bytes.HasSuffix(in[end-1:], []byte("&#xA;")) {
+			end -= len("&#xA;")
+			continue
+		}
+		break
 	}
 	return start, end
 }
