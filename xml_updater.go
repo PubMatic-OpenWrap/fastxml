@@ -2,7 +2,6 @@ package fastxml
 
 import (
 	"sort"
-	"strings"
 )
 
 type xmlOperation struct {
@@ -217,17 +216,14 @@ func (xu *XMLUpdater) ApplyXMLSettingsOperations() {
 
 	xu.xmlReader.Iterate(func(element *Element) {
 		if xu.xmlReader.IsLeaf(element) {
+			name := xu.xmlReader.Name(element)
+			_ = name
 			text := xu.xmlReader.RawText(element)
-			trimmedText := strings.TrimSpace(text)
+			trimmedText := trimSpace(text) //strings.TrimSpace(text)
 
 			if xu.xmlReader.IsCDATA(element) {
-				if len(text) == 0 {
-					//remove empty cdata <![CDATA[]]>
-					xu.UpdateText(element, "", false, NoEscaping)
-				} else if len(text) > len(trimmedText) {
-					//trim spaces within cdata <![CDATA[ text ]]> => <![CDATA[text]]>
-					xu.UpdateText(element, trimmedText, true, NoEscaping)
-				}
+				//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
+				xu.UpdateText(element, trimmedText, len(trimmedText) != 0, NoEscaping)
 			} else {
 				if xu.writeSettings.ExpandInline && element.Data().IsInline() {
 					//expand inline tag <abc/> => <abc></abc>
@@ -236,10 +232,8 @@ func (xu *XMLUpdater) ApplyXMLSettingsOperations() {
 				}
 
 				if xu.writeSettings.CDATAWrap {
-					if len(text) > 0 {
-						//wrap text into cdata text => <![CDATA[text]]>
-						xu.UpdateText(element, trimmedText, true, XMLUnescapeMode)
-					}
+					//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
+					xu.UpdateText(element, trimmedText, len(trimmedText) != 0, XMLUnescapeMode)
 				}
 			}
 		}
