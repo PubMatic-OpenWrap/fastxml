@@ -16,8 +16,39 @@ var (
 		"lt;":   '<',
 		"gt;":   '>',
 		"quot;": '"',
+		"#39;":  '\'',
+		"#34;":  '"',
+		"#xA;":  '\n',
+		"#x9;":  '\t',
+		"#xD;":  '\r',
 	}
 )
+
+/*
+var xmlReplacerNormal = strings.NewReplacer(
+	"&", "&amp;",
+	"<", "&lt;",
+	">", "&gt;",
+	"'", "&apos;",
+	`"`, "&quot;",
+)
+
+var xmlReplacerCanonicalText = strings.NewReplacer(
+	"&", "&amp;",
+	"<", "&lt;",
+	">", "&gt;",
+	"\r", "&#xD;",
+)
+
+var xmlReplacerCanonicalAttrVal = strings.NewReplacer(
+	"&", "&amp;",
+	"<", "&lt;",
+	`"`, "&quot;",
+	"\t", "&#x9;",
+	"\n", "&#xA;",
+	"\r", "&#xD;",
+)
+*/
 
 func init() {
 	whitespace[' '] = true
@@ -62,14 +93,60 @@ func _trimCDATA(in []byte, start, end int) (int, int, bool) {
 	return start, end, found
 }
 
+func skipToken(data []byte, start, end int, front bool) (skipLen int) {
+	if end-start < 5 { // Minimum length check for &#xN;
+		return 0
+	}
+
+	si, ei := start, start+5
+	if !front {
+		si, ei = end-5, end
+	}
+
+	tmp := data[si:ei]
+	// Check if the pattern matches &#xN; => &#x[9AD];
+	if bytes.HasPrefix(tmp, []byte("&#x")) &&
+		tmp[4] == ';' &&
+		(tmp[3] == 'A' || tmp[3] == '9' || tmp[3] == 'D') {
+		return 5 // Skip the token length of 5
+	}
+
+	return 0
+}
+
 func _trim(in []byte, start, end int) (int, int) {
-	//remove heading whitespaces
-	for ; start < end && whitespace[in[start]]; start++ {
+	// Remove leading whitespaces and special tokens
+	for start < end {
+		if whitespace[in[start]] {
+			start++
+			continue
+		}
+		if skipLen := skipToken(in, start, end, true); skipLen > 0 {
+			start += skipLen
+			continue
+		}
+		break
 	}
-	//remove trailing whitespaces
-	for ; end > start && whitespace[in[end-1]]; end-- {
+
+	// Remove trailing whitespaces and special tokens
+	for end > start {
+		if whitespace[in[end-1]] {
+			end--
+			continue
+		}
+		if skipLen := skipToken(in, start, end, false); skipLen > 0 {
+			end -= skipLen
+			continue
+		}
+		break
 	}
+
 	return start, end
+}
+
+func trimSpace(in string) string {
+	si, ei := _trim([]byte(in), 0, len(in))
+	return in[si:ei]
 }
 
 // escape writes an escaped version of a string to the writer.
