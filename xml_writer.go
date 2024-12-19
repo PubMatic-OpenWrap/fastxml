@@ -127,6 +127,14 @@ func NewXMLText(text string, cdata bool, escaping XMLEscapingMode) *XMLTextEleme
 	}
 }
 
+func NewXMLBytes(text []byte, cdata bool, escaping XMLEscapingMode) *XMLTextElement {
+	return &XMLTextElement{
+		text:     text,
+		cdata:    cdata,
+		escaping: escaping,
+	}
+}
+
 func (xt *XMLTextElement) Write(buf Writer) {
 	if xt.cdata {
 		buf.Write(cdataStart)
@@ -168,7 +176,7 @@ func (xf *XMLTextFunc) Write(buf Writer) {
 	if xf.fn == nil {
 		return
 	}
-	
+
 	if xf.cdata {
 		buf.Write(cdataStart)
 	}

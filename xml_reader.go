@@ -73,6 +73,10 @@ func (xr *XMLReader) SelectAttrValue(node *Element, key string) (value string) {
 	return ""
 }
 
+func (xr *XMLReader) XMLTag(node *Element) []byte {
+	return node.data.XMLTag(xr.in)
+}
+
 func (xr *XMLReader) Text(node *Element) (value string) {
 	if !node.data.IsCDATA(xr.in) {
 		//unescape and return
