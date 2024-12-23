@@ -41,7 +41,7 @@ type XMLElement struct {
 	name  string
 	text  XMLWriter
 	attr  []xmlAttribute
-	child []*XMLElement
+	child []XMLWriter
 }
 
 func CreateElement(name string) *XMLElement {
@@ -58,7 +58,7 @@ func (xt *XMLElement) AddAttribute(namespace, key, value string) *XMLElement {
 	return xt
 }
 
-func (xt *XMLElement) AddChild(child *XMLElement) *XMLElement {
+func (xt *XMLElement) AddChild(child XMLWriter) *XMLElement {
 	xt.child = append(xt.child, child)
 	return xt
 }
