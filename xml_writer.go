@@ -73,6 +73,10 @@ func (xt *XMLElement) SetName(name string) *XMLElement {
 	return xt
 }
 
+func (xt *XMLElement) IsEmpty() bool {
+	return xt.name == "" && xt.text == nil && len(xt.child) == 0
+}
+
 func (xt *XMLElement) Write(buf Writer) {
 	if len(xt.name) > 0 {
 		buf.WriteByte('<')

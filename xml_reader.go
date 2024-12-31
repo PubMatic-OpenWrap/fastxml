@@ -77,6 +77,10 @@ func (xr *XMLReader) XMLTag(node *Element) []byte {
 	return node.data.XMLTag(xr.in)
 }
 
+func (xr *XMLReader) XMLWriter(node *Element) XMLWriter {
+	return NewXMLBytes(node.data.XMLTag(xr.in), false, NoEscaping)
+}
+
 func (xr *XMLReader) Text(node *Element) (value string) {
 	if !node.data.IsCDATA(xr.in) {
 		//unescape and return
