@@ -29,6 +29,8 @@ func NewXMLUpdater(xmlReader *XMLReader, writeSettings WriteSettings) *XMLUpdate
 
 /* XML ELEMENT FUNCTION */
 
+/* XML ELEMENT FUNCTION */
+
 func (xu *XMLUpdater) AppendElement(element *Element, tagXML XMLWriter) {
 	if element == nil || tagXML == nil {
 		return
@@ -38,6 +40,42 @@ func (xu *XMLUpdater) AppendElement(element *Element, tagXML XMLWriter) {
 		ei:   element.data.end.si,
 		data: tagXML,
 	})
+}
+
+func (xu *XMLUpdater) BeforeElement(element *Element, tagXML XMLWriter) {
+	if element == nil || tagXML == nil {
+		return
+	}
+	xu.ops = append(xu.ops, xmlOperation{
+		si:   element.data.start.si,
+		ei:   element.data.start.si,
+		data: tagXML,
+	})
+	/*
+		//INLINE TAG NOT SUPPORTED YET
+		if element.data.IsInline() {
+			it should replace "/>" value with ">tagXML</xmlns:name>"
+			need to check if multiple such operation are there then only append tagXML
+		}
+	*/
+}
+
+func (xu *XMLUpdater) AfterElement(element *Element, tagXML XMLWriter) {
+	if element == nil || tagXML == nil {
+		return
+	}
+	xu.ops = append(xu.ops, xmlOperation{
+		si:   element.data.end.ei,
+		ei:   element.data.end.ei,
+		data: tagXML,
+	})
+	/*
+		//INLINE TAG NOT SUPPORTED YET
+		if element.data.IsInline() {
+			it should replace "/>" value with ">tagXML</xmlns:name>"
+			need to check if multiple such operation are there then only append tagXML
+		}
+	*/
 }
 
 func (xu *XMLUpdater) PrependElement(element *Element, tagXML XMLWriter) {
