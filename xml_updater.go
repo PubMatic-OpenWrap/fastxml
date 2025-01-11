@@ -14,17 +14,17 @@ TODO: makesure not 2 operations overlaps
 */
 type XMLUpdater struct {
 	xmlReader     *XMLReader
-	writeSettings WriteSettings
+	root          *Element
+	writeSettings *WriteSettings
 	ops           []xmlOperation
 }
 
-type WriteSettings struct {
-	CDATAWrap    bool
-	ExpandInline bool
+func NewXMLUpdater(xmlReader *XMLReader, writeSettings WriteSettings) *XMLUpdater {
+	return &XMLUpdater{xmlReader: xmlReader, root: xmlReader.Root(), writeSettings: &writeSettings}
 }
 
-func NewXMLUpdater(xmlReader *XMLReader, writeSettings WriteSettings) *XMLUpdater {
-	return &XMLUpdater{xmlReader: xmlReader, writeSettings: writeSettings}
+func NewXMLElementUpdater(xmlReader *XMLReader, element *Element, writeSettings WriteSettings) *XMLUpdater {
+	return &XMLUpdater{xmlReader: xmlReader, root: element, writeSettings: &writeSettings}
 }
 
 /* XML ELEMENT FUNCTION */
@@ -142,7 +142,7 @@ func (xu *XMLUpdater) UpdateText(element *Element, text string, cdata bool, esca
 		op.ei = element.data.end.ei - 1
 		op.data = NewXmlTextFunc(
 			false,
-			func(w Writer, args ...any) {
+			func(w Writer, ws *WriteSettings, args ...any) {
 				if len(args) != 2 {
 					return
 				}
@@ -150,7 +150,7 @@ func (xu *XMLUpdater) UpdateText(element *Element, text string, cdata bool, esca
 				text, _ := args[1].(XMLWriter)
 
 				w.WriteByte('>')
-				text.Write(w)
+				text.Write(w, ws)
 				w.WriteString("</")
 				w.WriteString(name)
 			},
@@ -195,7 +195,7 @@ func (xu *XMLUpdater) UpdateAttributeValue(attr *Attribute, value string) {
 		ei: attr.value.ei + 1,
 		data: NewXmlTextFunc(
 			false,
-			func(w Writer, args ...any) {
+			func(w Writer, _ *WriteSettings, args ...any) {
 				if len(args) != 1 {
 					return
 				}
@@ -218,7 +218,7 @@ func (xu *XMLUpdater) expandInline(element *Element) {
 		ei: element.data.end.ei - 1,
 		data: NewXmlTextFunc(
 			false,
-			func(w Writer, args ...any) {
+			func(w Writer, _ *WriteSettings, args ...any) {
 				if len(args) != 1 {
 					return
 				}
@@ -246,55 +246,87 @@ func (xu *XMLUpdater) UpdateAttributeName(attr *Attribute, key string) {
 }
 */
 
-func (xu *XMLUpdater) ApplyXMLSettingsOperations() {
+func (xu *XMLUpdater) applyElementSettings(element *Element) {
+	if element.IsLeaf() {
+		// name := xu.xmlReader.Name(element)
+		// _ = name
+		text := xu.xmlReader.RawText(element)
+		trimmedText := trimSpace(text) //strings.TrimSpace(text)
+
+		if xu.xmlReader.IsCDATA(element) {
+			//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
+			xu.UpdateText(element, trimmedText, len(trimmedText) != 0, NoEscaping)
+		} else {
+			if xu.writeSettings.ExpandInline && element.Data().IsInline() {
+				//expand inline tag <abc/> => <abc></abc>
+				xu.expandInline(element)
+				return
+			}
+
+			if xu.writeSettings.CDATAWrap {
+				//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
+				xu.UpdateText(element, trimmedText, len(trimmedText) != 0, XMLUnescapeMode)
+			}
+		}
+	}
+}
+
+func (xu *XMLUpdater) applyXMLSettings() {
 	// wrap cdata
-	if !(xu.writeSettings.ExpandInline || xu.writeSettings.CDATAWrap) {
+	if xu.writeSettings == nil || !(xu.writeSettings.ExpandInline || xu.writeSettings.CDATAWrap) {
 		return
 	}
 
-	xu.xmlReader.Iterate(func(element *Element) {
-		if xu.xmlReader.IsLeaf(element) {
-			name := xu.xmlReader.Name(element)
-			_ = name
-			text := xu.xmlReader.RawText(element)
-			trimmedText := trimSpace(text) //strings.TrimSpace(text)
+	if xu.root.IsLeaf() {
+		xu.applyElementSettings(xu.root)
+		return
+	}
 
-			if xu.xmlReader.IsCDATA(element) {
-				//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
-				xu.UpdateText(element, trimmedText, len(trimmedText) != 0, NoEscaping)
-			} else {
-				if xu.writeSettings.ExpandInline && element.Data().IsInline() {
-					//expand inline tag <abc/> => <abc></abc>
-					xu.expandInline(element)
-					return
-				}
-
-				if xu.writeSettings.CDATAWrap {
-					//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
-					xu.UpdateText(element, trimmedText, len(trimmedText) != 0, XMLUnescapeMode)
-				}
-			}
-		}
-	})
+	if xu.root.Index() == xu.xmlReader.Root().Index() {
+		//root element
+		xu.xmlReader.Iterate(xu.applyElementSettings)
+	} else {
+		//traverse element
+		xu.xmlReader.Traverse(xu.root, xu.applyElementSettings)
+	}
 }
 
 func (xu *XMLUpdater) Build(buf Writer) {
+	if xu.root == nil {
+		return
+	}
+
+	//apply write settings operations first
+	xu.applyXMLSettings()
+
 	//sort operations based on index
 	sort.SliceStable(xu.ops[:], func(i, j int) bool {
 		return (xu.ops[i].si < xu.ops[j].si ||
 			(xu.ops[i].si == xu.ops[j].si && xu.ops[i].ei < xu.ops[j].ei))
 	})
 
-	in := xu.xmlReader.RawXML()
-	offset := 0
+	var (
+		in         = xu.xmlReader.RawXML()
+		start, end = xu.root.Data().TagOffset()
+		offset     = start
+	)
+
+	//TODO: temporary fix
+	if end == 0 {
+		end = len(xu.xmlReader.in)
+	}
+
+	//TODO: remove invalid operations
+	//xu.ops = removeInvalid(xu.ops)
+
 	for _, op := range xu.ops {
 		if offset <= op.si {
 			buf.Write(in[offset:op.si])
 			offset = op.ei
 		}
 		if op.data != nil {
-			op.data.Write(buf)
+			op.data.Write(buf, xu.writeSettings)
 		}
 	}
-	buf.Write(in[offset:])
+	buf.Write(in[offset:end])
 }

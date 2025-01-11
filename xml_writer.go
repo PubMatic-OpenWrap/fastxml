@@ -4,6 +4,11 @@ import (
 	"io"
 )
 
+type WriteSettings struct {
+	CDATAWrap    bool
+	ExpandInline bool
+}
+
 type Writer interface {
 	io.StringWriter
 	io.ByteWriter
@@ -11,7 +16,7 @@ type Writer interface {
 }
 
 type XMLWriter interface {
-	Write(buf Writer)
+	Write(buf Writer, ws *WriteSettings)
 }
 
 //---------------------------------------------------------------------------------------------
@@ -21,7 +26,7 @@ type xmlAttribute struct {
 	namespace, key, value string
 }
 
-func (xa *xmlAttribute) Write(buf Writer) {
+func (xa *xmlAttribute) Write(buf Writer, ws *WriteSettings) {
 	buf.WriteByte(' ')
 	if xa.namespace != "" {
 		buf.WriteString(xa.namespace)
@@ -74,10 +79,10 @@ func (xt *XMLElement) SetName(name string) *XMLElement {
 }
 
 func (xt *XMLElement) IsEmpty() bool {
-	return xt.name == "" && xt.text == nil && len(xt.child) == 0
+	return !(len(xt.child) > 0 || xt.name != "")
 }
 
-func (xt *XMLElement) Write(buf Writer) {
+func (xt *XMLElement) Write(buf Writer, ws *WriteSettings) {
 	if len(xt.name) > 0 {
 		buf.WriteByte('<')
 
@@ -89,18 +94,18 @@ func (xt *XMLElement) Write(buf Writer) {
 		buf.WriteString(xt.name)
 
 		for _, attr := range xt.attr {
-			attr.Write(buf)
+			attr.Write(buf, ws)
 		}
 
 		buf.WriteByte('>')
 	}
 
 	if xt.text != nil {
-		xt.text.Write(buf)
+		xt.text.Write(buf, ws)
 	}
 
 	for _, child := range xt.child {
-		child.Write(buf)
+		child.Write(buf, ws)
 	}
 
 	if len(xt.name) > 0 {
@@ -139,7 +144,7 @@ func NewXMLBytes(text []byte, cdata bool, escaping XMLEscapingMode) *XMLTextElem
 	}
 }
 
-func (xt *XMLTextElement) Write(buf Writer) {
+func (xt *XMLTextElement) Write(buf Writer, _ *WriteSettings) {
 	if xt.cdata {
 		buf.Write(cdataStart)
 	}
@@ -164,11 +169,11 @@ func (xt *XMLTextElement) Write(buf Writer) {
 // XMLTextFunc element
 type XMLTextFunc struct {
 	cdata bool
-	fn    func(Writer, ...any)
+	fn    func(Writer, *WriteSettings, ...any)
 	args  []interface{}
 }
 
-func NewXmlTextFunc(cdata bool, f func(Writer, ...any), args ...any) *XMLTextFunc {
+func NewXmlTextFunc(cdata bool, f func(Writer, *WriteSettings, ...any), args ...any) *XMLTextFunc {
 	return &XMLTextFunc{
 		cdata: cdata,
 		fn:    f,
@@ -176,7 +181,7 @@ func NewXmlTextFunc(cdata bool, f func(Writer, ...any), args ...any) *XMLTextFun
 	}
 }
 
-func (xf *XMLTextFunc) Write(buf Writer) {
+func (xf *XMLTextFunc) Write(buf Writer, ws *WriteSettings) {
 	if xf.fn == nil {
 		return
 	}
@@ -184,8 +189,38 @@ func (xf *XMLTextFunc) Write(buf Writer) {
 	if xf.cdata {
 		buf.Write(cdataStart)
 	}
-	xf.fn(buf, xf.args...)
+	xf.fn(buf, ws, xf.args...)
 	if xf.cdata {
 		buf.Write(cdataEnd)
 	}
+}
+
+//---------------------------------------------------------------------------------------------
+
+// XMLReferenceElement element
+type XMLReferenceElement struct {
+	doc     *XMLReader
+	element *Element
+}
+
+func NewXMLReferenceElement(doc *XMLReader, element *Element) *XMLReferenceElement {
+	return &XMLReferenceElement{
+		doc:     doc,
+		element: element,
+	}
+}
+
+func (xr *XMLReferenceElement) Write(buf Writer, ws *WriteSettings) {
+	if xr.doc == nil || xr.element == nil {
+		return
+	}
+
+	if ws == nil || (!ws.CDATAWrap && !ws.ExpandInline) {
+		buf.Write(xr.doc.XMLTag(xr.element))
+		return
+	}
+
+	//non leaf element
+	xu := NewXMLElementUpdater(xr.doc, xr.element, *ws)
+	xu.Build(buf)
 }
