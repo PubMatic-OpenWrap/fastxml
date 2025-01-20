@@ -149,6 +149,11 @@ func trimSpace(in string) string {
 	return in[si:ei]
 }
 
+func trimSpaceBytes(in []byte) []byte {
+	si, ei := _trim(in, 0, len(in))
+	return in[si:ei]
+}
+
 // escape writes an escaped version of a string to the writer.
 func escape[T []byte | string](w Writer, s T) {
 	for i := 0; i < len(s); i++ {

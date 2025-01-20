@@ -82,11 +82,11 @@ func (xr *XMLReader) Text(node *Element) (value string) {
 		//unescape and return
 		return string(unescapeBytes(node.data.Text(xr.in)))
 	}
-	return string(node.data.Text(xr.in))
+	return string(trimSpaceBytes(node.data.Text(xr.in)))
 }
 
 func (xr *XMLReader) RawText(node *Element) (value string) {
-	return string(node.data.Text(xr.in))
+	return string(trimSpaceBytes(node.data.Text(xr.in)))
 }
 
 func (xr *XMLReader) Name(node *Element) (value string) {
