@@ -49,7 +49,7 @@ type XMLElement struct {
 	child []XMLWriter
 }
 
-func CreateElement(name string) *XMLElement {
+func NewElement(name string) *XMLElement {
 	return &XMLElement{name: name}
 }
 
@@ -80,6 +80,10 @@ func (xt *XMLElement) SetName(name string) *XMLElement {
 
 func (xt *XMLElement) IsEmpty() bool {
 	return !(len(xt.child) > 0 || xt.name != "")
+}
+
+func (xt *XMLElement) Childrens() []XMLWriter {
+	return xt.child
 }
 
 func (xt *XMLElement) Write(buf Writer, ws *WriteSettings) {

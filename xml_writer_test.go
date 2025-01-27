@@ -16,14 +16,14 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `empty_node`,
 			setup: func() XMLWriter {
-				return CreateElement("node")
+				return NewElement("node")
 			},
 			want: `<node></node>`,
 		},
 		{
 			name: `adding attributes`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.AddAttribute("ns", "key1", "value1")
 				node.AddAttribute("", "key2", "value2")
 				node.SetText("text", false, NoEscaping)
@@ -34,7 +34,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `escaping_attributes`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.AddAttribute("", "k1", `val"ue`)
 				node.AddAttribute("", "k2", "val'ue")
 				return node
@@ -44,7 +44,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `update_name_with_cdata_text`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetName("new_name")
 				node.SetText("text", true, NoEscaping)
 				return node
@@ -54,7 +54,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `escaping_text`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetText("<new & text>", true, XMLEscapeMode)
 				return node
 			},
@@ -63,7 +63,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `unescaping_text`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetText("&lt;new &amp; text&gt;", true, XMLUnescapeMode)
 				return node
 			},
@@ -72,7 +72,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `node_namespace`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetNamespace("ns")
 				node.SetText("new text", false, NoEscaping)
 				return node
@@ -82,10 +82,10 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `nested_node`,
 			setup: func() XMLWriter {
-				node := CreateElement("a").
-					AddChild(CreateElement("b").
-						AddChild(CreateElement("c").SetText("cdata", false, NoEscaping)).
-						AddChild(CreateElement("d").SetText("ddata", false, NoEscaping)))
+				node := NewElement("a").
+					AddChild(NewElement("b").
+						AddChild(NewElement("c").SetText("cdata", false, NoEscaping)).
+						AddChild(NewElement("d").SetText("ddata", false, NoEscaping)))
 				return node
 			},
 			want: `<a><b><c>cdata</c><d>ddata</d></b></a>`,
