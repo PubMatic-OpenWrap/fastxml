@@ -9,10 +9,6 @@ var errInvalidXML = fmt.Errorf("invalid xml")
 type Element = treeNode[XMLToken]
 type TokenHandler func(string, *Element, Element)
 
-func NewElement(token XMLToken) Element {
-	return Element{data: token, first: -1, last: -1, next: -1}
-}
-
 type XMLTokenizer struct {
 	path *xpath
 }
@@ -118,3 +114,9 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
 	}
 	return nil
 }
+
+/*
+func NewElement(token XMLToken) Element {
+	return Element{data: token, first: -1, last: -1, next: -1}
+}
+*/

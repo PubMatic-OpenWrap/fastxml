@@ -38,15 +38,15 @@ func TestXMLUpdater(t *testing.T) {
 	updater.RemoveElement(reader.SelectElement(nil, "a", "c"))
 
 	//replace full element
-	updater.ReplaceElement(elementB, CreateElement("new_b").SetText("new_b_data", false, NoEscaping))
+	updater.ReplaceElement(elementB, NewElement("new_b").SetText("new_b_data", false, NoEscaping))
 
 	//append or prepend new xml tag
-	updater.PrependElement(elementF, CreateElement("f1").SetText("prepend_data", false, NoEscaping))
-	updater.AppendElement(elementF, CreateElement("f2").SetText("append_data", false, NoEscaping))
+	updater.PrependElement(elementF, NewElement("f1").SetText("prepend_data", false, NoEscaping))
+	updater.AppendElement(elementF, NewElement("f2").SetText("append_data", false, NoEscaping))
 
 	//append or prepend new xml tag in existing which has text
-	updater.PrependElement(elementG, CreateElement("g1").SetText("prepend_tag", false, NoEscaping))
-	updater.AppendElement(elementG, CreateElement("g2").SetText("append_tag", false, NoEscaping))
+	updater.PrependElement(elementG, NewElement("g1").SetText("prepend_tag", false, NoEscaping))
+	updater.AppendElement(elementG, NewElement("g2").SetText("append_tag", false, NoEscaping))
 
 	//update text
 	updater.UpdateText(elementG, "new-g-data", false, NoEscaping)
@@ -106,7 +106,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.AppendElement(reader.SelectElement(nil, "a"), CreateElement("").SetText("<empty_tag/>", false, NoEscaping))
+					xu.AppendElement(reader.SelectElement(nil, "a"), NewElement("").SetText("<empty_tag/>", false, NoEscaping))
 				},
 			},
 			want: `<a><empty_tag/></a>`,
@@ -116,7 +116,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.AppendElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.AppendElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><tag>tagdata</tag></a>`,
@@ -126,7 +126,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.AppendElement(nil, CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.AppendElement(nil, NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a></a>`,
@@ -136,7 +136,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a>test_data</a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.AppendElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.AppendElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a>test_data<tag>tagdata</tag></a>`,
@@ -146,7 +146,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a><b><c>cdata</c></b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.AppendElement(reader.SelectElement(nil, "a", "b", "c"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.AppendElement(reader.SelectElement(nil, "a", "b", "c"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><b><c>cdata<tag>tagdata</tag></c></b></a>`,
@@ -156,7 +156,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 			args: args{
 				in: `<a><b><c>cdata</c></b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.AppendElement(reader.SelectElement(nil, "a", "b"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.AppendElement(reader.SelectElement(nil, "a", "b"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><b><c>cdata</c><tag>tagdata</tag></b></a>`,
@@ -167,8 +167,8 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				in: `<a><b>one</b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
 					elementA := reader.SelectElement(nil, "a")
-					xu.AppendElement(elementA, CreateElement("b").SetText("two", false, NoEscaping))
-					xu.AppendElement(elementA, CreateElement("b").SetText("three", false, NoEscaping))
+					xu.AppendElement(elementA, NewElement("b").SetText("two", false, NoEscaping))
+					xu.AppendElement(elementA, NewElement("b").SetText("three", false, NoEscaping))
 				},
 			},
 			want: `<a><b>one</b><b>two</b><b>three</b></a>`,
@@ -180,8 +180,8 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
 					elementB := reader.SelectElement(nil, "a", "b")
 					elementC := reader.SelectElement(nil, "a", "b", "c")
-					xu.AppendElement(elementB, CreateElement("b1").SetText("b1_data", false, NoEscaping))
-					xu.AppendElement(elementC, CreateElement("c1").SetText("c1_data", false, NoEscaping))
+					xu.AppendElement(elementB, NewElement("b1").SetText("b1_data", false, NoEscaping))
+					xu.AppendElement(elementC, NewElement("c1").SetText("c1_data", false, NoEscaping))
 				},
 			},
 			want: `<a><b><c>cdata<c1>c1_data</c1></c><b1>b1_data</b1></b></a>`,
@@ -253,7 +253,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.PrependElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.PrependElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><tag>tagdata</tag></a>`,
@@ -263,7 +263,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.PrependElement(nil, CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.PrependElement(nil, NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a></a>`,
@@ -273,7 +273,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 			args: args{
 				in: `<a>test_data</a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.PrependElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.PrependElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><tag>tagdata</tag>test_data</a>`,
@@ -283,7 +283,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 			args: args{
 				in: `<a><b><c>cdata</c></b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.PrependElement(reader.SelectElement(nil, "a", "b", "c"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.PrependElement(reader.SelectElement(nil, "a", "b", "c"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><b><c><tag>tagdata</tag>cdata</c></b></a>`,
@@ -293,7 +293,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 			args: args{
 				in: `<a><b><c>cdata</c></b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.PrependElement(reader.SelectElement(nil, "a", "b"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.PrependElement(reader.SelectElement(nil, "a", "b"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><b><tag>tagdata</tag><c>cdata</c></b></a>`,
@@ -304,8 +304,8 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				in: `<a><b>one</b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
 					elementA := reader.SelectElement(nil, "a")
-					xu.PrependElement(elementA, CreateElement("b").SetText("two", false, NoEscaping))
-					xu.PrependElement(elementA, CreateElement("b").SetText("three", false, NoEscaping))
+					xu.PrependElement(elementA, NewElement("b").SetText("two", false, NoEscaping))
+					xu.PrependElement(elementA, NewElement("b").SetText("three", false, NoEscaping))
 				},
 			},
 			want: `<a><b>two</b><b>three</b><b>one</b></a>`,
@@ -317,8 +317,8 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
 					elementB := reader.SelectElement(nil, "a", "b")
 					elementC := reader.SelectElement(nil, "a", "b", "c")
-					xu.PrependElement(elementB, CreateElement("b1").SetText("b1_data", false, NoEscaping))
-					xu.PrependElement(elementC, CreateElement("c1").SetText("c1_data", false, NoEscaping))
+					xu.PrependElement(elementB, NewElement("b1").SetText("b1_data", false, NoEscaping))
+					xu.PrependElement(elementC, NewElement("c1").SetText("c1_data", false, NoEscaping))
 				},
 			},
 			want: `<a><b><b1>b1_data</b1><c><c1>c1_data</c1>cdata</c></b></a>`,
@@ -364,7 +364,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.ReplaceElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.ReplaceElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<tag>tagdata</tag>`,
@@ -374,7 +374,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a/>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.ReplaceElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.ReplaceElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<tag>tagdata</tag>`,
@@ -384,7 +384,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.PrependElement(nil, CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.PrependElement(nil, NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a></a>`,
@@ -394,7 +394,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a ak1="av1">test_data</a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.ReplaceElement(reader.SelectElement(nil, "a"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.ReplaceElement(reader.SelectElement(nil, "a"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<tag>tagdata</tag>`,
@@ -404,7 +404,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a><b><c>cdata</c></b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.ReplaceElement(reader.SelectElement(nil, "a", "b", "c"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.ReplaceElement(reader.SelectElement(nil, "a", "b", "c"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><b><tag>tagdata</tag></b></a>`,
@@ -414,7 +414,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 			args: args{
 				in: `<a><b><c>cdata</c></b></a>`,
 				operations: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.ReplaceElement(reader.SelectElement(nil, "a", "b"), CreateElement("tag").SetText("tagdata", false, NoEscaping))
+					xu.ReplaceElement(reader.SelectElement(nil, "a", "b"), NewElement("tag").SetText("tagdata", false, NoEscaping))
 				},
 			},
 			want: `<a><tag>tagdata</tag></a>`,
@@ -1096,7 +1096,7 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 			xu := NewXMLUpdater(reader, WriteSettings{})
 			tt.args.setup(xu, reader)
 
-			xu.ApplyXMLSettingsOperations()
+			xu.applyXMLSettings()
 
 			//rebuild buffer
 			out := bytes.Buffer{}

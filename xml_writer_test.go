@@ -16,14 +16,14 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `empty_node`,
 			setup: func() XMLWriter {
-				return CreateElement("node")
+				return NewElement("node")
 			},
 			want: `<node></node>`,
 		},
 		{
 			name: `adding attributes`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.AddAttribute("ns", "key1", "value1")
 				node.AddAttribute("", "key2", "value2")
 				node.SetText("text", false, NoEscaping)
@@ -34,7 +34,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `escaping_attributes`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.AddAttribute("", "k1", `val"ue`)
 				node.AddAttribute("", "k2", "val'ue")
 				return node
@@ -44,7 +44,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `update_name_with_cdata_text`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetName("new_name")
 				node.SetText("text", true, NoEscaping)
 				return node
@@ -54,7 +54,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `escaping_text`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetText("<new & text>", true, XMLEscapeMode)
 				return node
 			},
@@ -63,7 +63,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `unescaping_text`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetText("&lt;new &amp; text&gt;", true, XMLUnescapeMode)
 				return node
 			},
@@ -72,7 +72,7 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `node_namespace`,
 			setup: func() XMLWriter {
-				node := CreateElement("node")
+				node := NewElement("node")
 				node.SetNamespace("ns")
 				node.SetText("new text", false, NoEscaping)
 				return node
@@ -82,10 +82,10 @@ func Test_XMLElement(t *testing.T) {
 		{
 			name: `nested_node`,
 			setup: func() XMLWriter {
-				node := CreateElement("a").
-					AddChild(CreateElement("b").
-						AddChild(CreateElement("c").SetText("cdata", false, NoEscaping)).
-						AddChild(CreateElement("d").SetText("ddata", false, NoEscaping)))
+				node := NewElement("a").
+					AddChild(NewElement("b").
+						AddChild(NewElement("c").SetText("cdata", false, NoEscaping)).
+						AddChild(NewElement("d").SetText("ddata", false, NoEscaping)))
 				return node
 			},
 			want: `<a><b><c>cdata</c><d>ddata</d></b></a>`,
@@ -96,7 +96,7 @@ func Test_XMLElement(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			node := tt.setup()
-			node.Write(buf)
+			node.Write(buf, &WriteSettings{})
 			assert.Equal(t, tt.want, buf.String())
 		})
 	}
@@ -142,7 +142,7 @@ func Test_XMLTextElement(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			node := tt.setup()
-			node.Write(buf)
+			node.Write(buf, &WriteSettings{})
 			assert.Equal(t, tt.want, buf.String())
 		})
 	}
@@ -166,7 +166,7 @@ func Test_XMLTextFunc(t *testing.T) {
 			setup: func() XMLWriter {
 				return NewXmlTextFunc(
 					false,
-					func(w Writer, args ...any) {
+					func(w Writer, _ *WriteSettings, args ...any) {
 						w.WriteString(args[0].(string))
 					},
 					"text")
@@ -178,10 +178,10 @@ func Test_XMLTextFunc(t *testing.T) {
 			setup: func() XMLWriter {
 				return NewXmlTextFunc(
 					false,
-					func(w Writer, args ...any) {
+					func(w Writer, ws *WriteSettings, args ...any) {
 						w.WriteString(args[0].(string))
 						w.WriteByte(':')
-						args[1].(XMLWriter).Write(w)
+						args[1].(XMLWriter).Write(w, ws)
 					},
 					"text", NewXMLText("new_text", false, NoEscaping))
 			},
@@ -193,7 +193,7 @@ func Test_XMLTextFunc(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			node := tt.setup()
-			node.Write(buf)
+			node.Write(buf, &WriteSettings{})
 			assert.Equal(t, tt.want, buf.String())
 		})
 	}

@@ -73,16 +73,20 @@ func (xr *XMLReader) SelectAttrValue(node *Element, key string) (value string) {
 	return ""
 }
 
+func (xr *XMLReader) XMLTag(node *Element) []byte {
+	return node.data.XMLTag(xr.in)
+}
+
 func (xr *XMLReader) Text(node *Element) (value string) {
 	if !node.data.IsCDATA(xr.in) {
 		//unescape and return
 		return string(unescapeBytes(node.data.Text(xr.in)))
 	}
-	return string(node.data.Text(xr.in))
+	return string(trimSpaceBytes(node.data.Text(xr.in)))
 }
 
 func (xr *XMLReader) RawText(node *Element) (value string) {
-	return string(node.data.Text(xr.in))
+	return string(trimSpaceBytes(node.data.Text(xr.in)))
 }
 
 func (xr *XMLReader) Name(node *Element) (value string) {
@@ -97,12 +101,23 @@ func (xr *XMLReader) IsCDATA(node *Element) bool {
 	return node.data.IsCDATA(xr.in)
 }
 
-func (xr *XMLReader) IsLeaf(node *Element) bool {
-	return xr.tree.isLeaf(node)
-}
-
 func (xr *XMLReader) Iterate(cb func(*Element)) {
 	xr.tree.iterate(cb)
+}
+
+func (xr *XMLReader) Traverse(parent *Element, cb func(*Element)) {
+	xr.tree.traverse(parent, cb)
+}
+
+func (xr *XMLReader) Root() *Element {
+	if len(xr.tree.nodes) == 0 {
+		return nil
+	}
+	return &xr.tree.nodes[0]
+}
+
+func (xr *XMLReader) XMLWriter(node *Element) XMLWriter {
+	return NewXMLReferenceElement(xr, node)
 }
 
 func (xr *XMLReader) getXML(in []byte) string {
