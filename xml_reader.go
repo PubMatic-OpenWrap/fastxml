@@ -12,9 +12,9 @@ type XMLReader struct {
 	parser *XMLTokenizer
 }
 
-func NewXMLReader(path *xpath) *XMLReader {
+func NewXMLReader() *XMLReader {
 	xr := &XMLReader{
-		parser: NewXMLTokenizer(path),
+		parser: NewXMLTokenizer(),
 	}
 	xr.tree = ElementTree{match: xr.match}
 	return xr
@@ -35,7 +35,13 @@ func (xr *XMLReader) RawXML() []byte {
 func (xr *XMLReader) Parse(in []byte) error {
 	xr.tree.reset()
 	xr.in = in
-	return xr.parser.Parse(in, xr.tokenHandler)
+	return xr.parser.parse(in, xr.tokenHandler)
+}
+
+func (xr *XMLReader) ParseUsingXPath(in []byte, path *xpath) error {
+	xr.tree.reset()
+	xr.in = in
+	return xr.parser.parseUsingXPath(in, path, xr.tokenHandler)
 }
 
 func (xr *XMLReader) Childrens(parent *Element) (result []*Element) {

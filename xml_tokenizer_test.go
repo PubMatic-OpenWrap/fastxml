@@ -105,7 +105,7 @@ func TestXMLTokenizer(t *testing.T) {
 	tokenHandler := mockTokenHandler{}
 
 	//parsing
-	parser.Parse(in[:], tokenHandler.append)
+	parser.parse(in[:], tokenHandler.append)
 
 	actual := getXML(in[:], tokenHandler.tokens[:])
 	t.Logf("Raw Tags: \n%v\n", printTokens(in[:], tokenHandler.tokens[:]))
@@ -114,14 +114,12 @@ func TestXMLTokenizer(t *testing.T) {
 }
 
 func TestXPathXMLTokenizer(t *testing.T) {
-	parser := XMLTokenizer{
-		path: xpaths["mini"],
-	}
+	parser := XMLTokenizer{}
 	in := []byte(minixml)
 	tokenHandler := mockTokenHandler{}
 
 	//parsing
-	parser.Parse(in[:], tokenHandler.append)
+	parser.parseUsingXPath(in[:], xpaths["mini"], tokenHandler.append)
 
 	actual := getXML(in[:], tokenHandler.tokens[:])
 	t.Logf("Raw Tags: \n%v\n", printTokens(in[:], tokenHandler.tokens[:]))

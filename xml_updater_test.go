@@ -21,7 +21,7 @@ func TestXMLUpdater(t *testing.T) {
 	</f>
 </a>`)
 
-	reader := NewXMLReader(nil)
+	reader := NewXMLReader()
 	if err := reader.Parse(xmlDoc); err != nil {
 		t.Errorf("xml parsing error: %v", err.Error())
 		return
@@ -190,7 +190,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -240,7 +240,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 				args: args{
 					in: `<a ak1="av1"/>`,
 					operations: func(xu *XMLUpdater, reader *XMLReader) {
-						reader := NewXMLReader(nil)
+						reader := NewXMLReader()
 						_ = reader.Parse(in)
 						xu.PrependElement(reader.FindElement(nil, "a"), `<tag>tagdata</tag>`)
 					},
@@ -327,7 +327,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -425,7 +425,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				args: args{
 					in: `<a><b>one</b></a>`,
 					operations: func(xu *XMLUpdater, reader *XMLReader) {
-						reader := NewXMLReader(nil)
+						reader := NewXMLReader()
 						_ = reader.Parse(in)
 						elementA := reader.FindElement(nil, "a")
 						xu.ReplaceElement(elementA, NewXMLTag("b", "two"))
@@ -439,7 +439,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 				args: args{
 					in: `<a><b><c>cdata</c><d>ddata</d></b></a>`,
 					operations: func(xu *XMLUpdater, reader *XMLReader) {
-						reader := NewXMLReader(nil)
+						reader := NewXMLReader()
 						_ = reader.Parse(in)
 						elementB := reader.FindElement(nil, "a", "b")
 						elementC := reader.FindElement(nil, "a", "b", "c")
@@ -454,7 +454,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -564,7 +564,7 @@ func TestXMLUpdater_RemoveElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -663,7 +663,7 @@ func TestXMLUpdater_UpdateText(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -772,7 +772,7 @@ func TestXMLUpdater_AddAttribute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -855,7 +855,7 @@ func TestXMLUpdater_RemoveAttribute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -959,7 +959,7 @@ func TestXMLUpdater_UpdateAttributeValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -1007,7 +1007,7 @@ func TestXMLUpdater_expandInline(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -1090,7 +1090,7 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})

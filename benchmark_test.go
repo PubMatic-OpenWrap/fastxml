@@ -11,10 +11,11 @@ var (
 	xmlReader                            *XMLReader
 	xmlReaderWithXPath                   *XMLReader
 	mockTokenHandler1, mockTokenHandler2 mockTokenHandler
+	path                                 *xpath
 )
 
 func init() {
-	xpath := GetXPath([][]string{
+	path = GetXPath([][]string{
 		{"VAST", "Ad", "InLine", "Impression"},
 		{"VAST", "Ad", "InLine", "Error"},
 		{"VAST", "Ad", "InLine", "Creatives", "Creative", "NonLinearAds", "TrackingEvents", "Tracking"},
@@ -57,16 +58,14 @@ func init() {
         </Wrapper>
     </Ad>
 </VAST>`
-	xmlTokenizer = NewXMLTokenizer(nil)
-	xmlTokenizerWithXPath = NewXMLTokenizer(xpath)
-	xmlReader = NewXMLReader(nil)
-	xmlReaderWithXPath = NewXMLReader(xpath)
+	xmlTokenizer = NewXMLTokenizer()
+	xmlReader = NewXMLReader()
 }
 
 func BenchmarkXMLTokenizer(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		mockTokenHandler1.tokens = mockTokenHandler1.tokens[:0]
-		xmlTokenizer.Parse([]byte(vastXMLString), mockTokenHandler1.append)
+		xmlTokenizer.parse([]byte(vastXMLString), mockTokenHandler1.append)
 	}
 }
 
@@ -79,13 +78,13 @@ func BenchmarkXMLReader(b *testing.B) {
 func BenchmarkXMLTokenizerWithXPath(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		mockTokenHandler2.tokens = mockTokenHandler2.tokens[:0]
-		xmlTokenizerWithXPath.Parse([]byte(vastXMLString), mockTokenHandler2.append)
+		xmlTokenizer.parseUsingXPath([]byte(vastXMLString), path, mockTokenHandler2.append)
 	}
 }
 
 func BenchmarkXMLReaderWithXPath(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		xmlReaderWithXPath.Parse([]byte(vastXMLString))
+		xmlReaderWithXPath.ParseUsingXPath([]byte(vastXMLString), path)
 	}
 }
 
