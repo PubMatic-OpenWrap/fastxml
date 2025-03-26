@@ -53,7 +53,7 @@ func TestXMLReader1(t *testing.T) {
 	t.Logf("\nXML:\n%s", xmldoc)
 
 	for _, element := range xmlReader.SelectElements(nil, "Catalog", "Book") {
-		t.Logf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.SelectAttrValue(element, "id"), xmlReader.Text(element))
+		t.Logf("\n/Catalog/Book: id:[%v] innerxml:[%v]", xmlReader.SelectAttrValue(element, "id", ""), xmlReader.Text(element))
 	}
 
 	for _, element := range xmlReader.SelectElements(nil, "Catalog", "*", "Author") {

@@ -5,8 +5,9 @@ import (
 )
 
 type WriteSettings struct {
-	CDATAWrap    bool
-	ExpandInline bool
+	CDATAWrap          bool
+	ExpandInline       bool
+	CompressWhitespace bool
 }
 
 type Writer interface {

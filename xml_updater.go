@@ -319,6 +319,10 @@ func (xu *XMLUpdater) Build(buf Writer) {
 	//TODO: remove invalid operations
 	//xu.ops = removeInvalid(xu.ops)
 
+	if xu.writeSettings.CompressWhitespace {
+		buf = newCompressWhitespace(buf)
+	}
+
 	for _, op := range xu.ops {
 		if offset <= op.si {
 			buf.Write(in[offset:op.si])
@@ -329,4 +333,12 @@ func (xu *XMLUpdater) Build(buf Writer) {
 		}
 	}
 	buf.Write(in[offset:end])
+}
+
+func (xu *XMLUpdater) String() string {
+	buf := getBuffer()
+	defer putBuffer(buf)
+
+	xu.Build(buf)
+	return buf.String()
 }
