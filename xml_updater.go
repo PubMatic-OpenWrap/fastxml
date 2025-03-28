@@ -20,11 +20,21 @@ type XMLUpdater struct {
 }
 
 func NewXMLUpdater(xmlReader *XMLReader, writeSettings WriteSettings) *XMLUpdater {
-	return &XMLUpdater{xmlReader: xmlReader, root: xmlReader.Root(), writeSettings: &writeSettings}
+	return &XMLUpdater{
+		xmlReader:     xmlReader,
+		root:          xmlReader.Root(),
+		writeSettings: &writeSettings,
+		// ops:           getXMLOperations(),
+	}
 }
 
 func NewXMLElementUpdater(xmlReader *XMLReader, element *Element, writeSettings WriteSettings) *XMLUpdater {
-	return &XMLUpdater{xmlReader: xmlReader, root: element, writeSettings: &writeSettings}
+	return &XMLUpdater{
+		xmlReader:     xmlReader,
+		root:          element,
+		writeSettings: &writeSettings,
+		// ops:           getXMLOperations(),
+	}
 }
 
 /* XML ELEMENT FUNCTION */
@@ -118,6 +128,10 @@ func (xu *XMLUpdater) RemoveElement(element *Element) {
 }
 
 func (xu *XMLUpdater) UpdateText(element *Element, text string, cdata bool, escaping XMLEscapingMode) {
+	xu.UpdateTextBytes(element, []byte(text), cdata, escaping)
+}
+
+func (xu *XMLUpdater) UpdateTextBytes(element *Element, text []byte, cdata bool, escaping XMLEscapingMode) {
 	if element == nil {
 		return
 	}
@@ -126,7 +140,7 @@ func (xu *XMLUpdater) UpdateText(element *Element, text string, cdata bool, esca
 		si: element.data.start.ei,
 		ei: element.data.end.si,
 		data: &XMLTextElement{
-			text:     []byte(text),
+			text:     text,
 			cdata:    cdata,
 			escaping: escaping,
 		},
@@ -247,26 +261,31 @@ func (xu *XMLUpdater) UpdateAttributeName(attr *Attribute, key string) {
 */
 
 func (xu *XMLUpdater) applyElementSettings(element *Element) {
-	if element.IsLeaf() {
-		// name := xu.xmlReader.Name(element)
-		// _ = name
-		text := xu.xmlReader.RawText(element)
-		trimmedText := trimSpace(text) //strings.TrimSpace(text)
+	if !element.IsLeaf() {
+		return
+	}
 
-		if xu.xmlReader.IsCDATA(element) {
+	// name := xu.xmlReader.Name(element)
+	// _ = name
+
+	if xu.writeSettings.ExpandInline && element.Data().IsInline() {
+		//expand inline tag <abc/> => <abc></abc>
+		xu.expandInline(element)
+		return
+	}
+
+	text := xu.xmlReader.RawTextBytes(element)
+	trimmedText := trimSpaceBytes([]byte(text))
+
+	if xu.xmlReader.IsCDATA(element) {
+		if len(trimmedText) < len(text) { //len(trimmedText) == 0 <![CDATA[]]>, len(text) == 0 <abc></abc>
 			//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
-			xu.UpdateText(element, trimmedText, len(trimmedText) != 0, NoEscaping)
-		} else {
-			if xu.writeSettings.ExpandInline && element.Data().IsInline() {
-				//expand inline tag <abc/> => <abc></abc>
-				xu.expandInline(element)
-				return
-			}
-
-			if xu.writeSettings.CDATAWrap {
-				//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
-				xu.UpdateText(element, trimmedText, len(trimmedText) != 0, XMLUnescapeMode)
-			}
+			xu.UpdateTextBytes(element, trimmedText, len(trimmedText) != 0, NoEscaping)
+		}
+	} else {
+		if xu.writeSettings.CDATAWrap {
+			//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
+			xu.UpdateTextBytes(element, trimmedText, len(trimmedText) != 0, XMLUnescapeMode)
 		}
 	}
 }
@@ -292,6 +311,8 @@ func (xu *XMLUpdater) applyXMLSettings() {
 }
 
 func (xu *XMLUpdater) Build(buf Writer) {
+	// defer putXMLOperations(xu.ops)
+
 	if xu.root == nil {
 		return
 	}

@@ -6,11 +6,13 @@ import (
 )
 
 var (
-	bufferedPool *sync.Pool
+	bufferedPool      *sync.Pool
+	xmlOperationsPool *sync.Pool
 )
 
 func init() {
 	bufferedPool = newBufferedPool()
+	xmlOperationsPool = newXMLOperationsPool()
 }
 
 // newBufferedPool returns the singleton instance of bufferedPool
@@ -31,4 +33,25 @@ func getBuffer() *bytes.Buffer {
 func putBuffer(buf *bytes.Buffer) {
 	buf.Reset() // Reset before putting it back
 	bufferedPool.Put(buf)
+}
+
+//--------------------------------------------------------------------------------------------
+
+// newXMLOperationsPool returns the singleton instance of bufferedPool
+func newXMLOperationsPool() *sync.Pool {
+	return &sync.Pool{
+		New: func() interface{} {
+			return make([]xmlOperation, 0, 10)
+		},
+	}
+}
+
+func getXMLOperations() []xmlOperation {
+	ops := xmlOperationsPool.Get().([]xmlOperation)
+	return ops[:0]
+}
+
+func putXMLOperations(ops []xmlOperation) {
+	ops = ops[:0] // Reset before putting it back
+	xmlOperationsPool.Put(ops[:])
 }

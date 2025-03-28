@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIndentationRemoverWrite(t *testing.T) {
+func TestCompressWhitespace(t *testing.T) {
 	type args struct {
 		input    string
 		lastChar byte
