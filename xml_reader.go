@@ -66,11 +66,11 @@ func (xr *XMLReader) SelectAttr(node *Element, key string) *Attribute {
 	return nil
 }
 
-func (xr *XMLReader) SelectAttrValue(node *Element, key string) (value string) {
+func (xr *XMLReader) SelectAttrValue(node *Element, key string, defaultValue string) (value string) {
 	if attr := xr.SelectAttr(node, key); attr != nil {
 		return string(attr.Value(xr.in))
 	}
-	return ""
+	return defaultValue
 }
 
 func (xr *XMLReader) XMLTag(node *Element) []byte {
@@ -86,7 +86,11 @@ func (xr *XMLReader) Text(node *Element) (value string) {
 }
 
 func (xr *XMLReader) RawText(node *Element) (value string) {
-	return string(trimSpaceBytes(node.data.Text(xr.in)))
+	return string(node.data.Text(xr.in))
+}
+
+func (xr *XMLReader) RawTextBytes(node *Element) (value []byte) {
+	return node.data.Text(xr.in)
 }
 
 func (xr *XMLReader) Name(node *Element) (value string) {
