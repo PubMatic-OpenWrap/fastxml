@@ -124,6 +124,13 @@ func (xt *XMLElement) Write(buf Writer, ws *WriteSettings) {
 	}
 }
 
+func (xt *XMLElement) String(ws *WriteSettings) string {
+	buf := getBuffer()
+	defer putBuffer(buf)
+	xt.Write(buf, ws)
+	return buf.String()
+}
+
 //---------------------------------------------------------------------------------------------
 
 // XMLTextElement element
