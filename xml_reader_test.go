@@ -10,7 +10,7 @@ import (
 func TestXMLReader(t *testing.T) {
 	in := []byte(`<![CDATA[http://hostedvasttag.url&k=v]]>`)
 
-	xmlReader := NewXMLReader(nil)
+	xmlReader := NewXMLReader()
 	xmlReader.Parse(in[:])
 
 	actual := xmlReader.getXML(in[:])
@@ -43,7 +43,7 @@ func TestXMLReader1(t *testing.T) {
 </Catalog>
 	`)
 
-	xmlReader := NewXMLReader(nil)
+	xmlReader := NewXMLReader()
 	err := xmlReader.Parse(xmldoc[:])
 	if err != nil {
 		t.Errorf("xml parsing error: %s", err.Error())
@@ -83,13 +83,11 @@ func TestXMLReader2(t *testing.T) {
 </Catalog>
 	`)
 
-	xmlReader := NewXMLReader(
-		GetXPath([][]string{
-			{"Catalog", "Book", "Author"},
-			{"Catalog", "Book", "Title"},
-		}),
-	)
-	err := xmlReader.Parse(xmldoc[:])
+	xmlReader := NewXMLReader()
+	err := xmlReader.ParseWithXPath(xmldoc[:], GetXPath([][]string{
+		{"Catalog", "Book", "Author"},
+		{"Catalog", "Book", "Title"},
+	}))
 	if err != nil {
 		t.Errorf("xml parsing error: %s", err.Error())
 		return
