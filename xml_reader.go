@@ -4,19 +4,17 @@ import (
 	"bytes"
 )
 
-type ElementTree = tree[XMLToken]
-
 type XMLReader struct {
 	in     []byte
-	tree   ElementTree
+	tree   xmlTree
 	parser *XMLTokenizer
 }
 
-func NewXMLReader(path *xpath) *XMLReader {
+func NewXMLReader() *XMLReader {
 	xr := &XMLReader{
-		parser: NewXMLTokenizer(path),
+		parser: NewXMLTokenizer(),
 	}
-	xr.tree = ElementTree{match: xr.match}
+	xr.tree = xmlTree{match: xr.match}
 	return xr
 }
 
@@ -36,6 +34,12 @@ func (xr *XMLReader) Parse(in []byte) error {
 	xr.tree.reset()
 	xr.in = in
 	return xr.parser.Parse(in, xr.tokenHandler)
+}
+
+func (xr *XMLReader) ParseWithXPath(in []byte, ixpath *xpath) error {
+	xr.tree.reset()
+	xr.in = in
+	return xr.parser.ParseWithXPath(in, ixpath, xr.tokenHandler)
 }
 
 func (xr *XMLReader) Childrens(parent *Element) (result []*Element) {

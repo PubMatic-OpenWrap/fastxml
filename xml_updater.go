@@ -268,9 +268,11 @@ func (xu *XMLUpdater) applyElementSettings(element *Element) {
 	// name := xu.xmlReader.Name(element)
 	// _ = name
 
-	if xu.writeSettings.ExpandInline && element.Data().IsInline() {
-		//expand inline tag <abc/> => <abc></abc>
-		xu.expandInline(element)
+	if element.Data().IsInline() {
+		if xu.writeSettings.ExpandInline {
+			//expand inline tag <abc/> => <abc></abc>
+			xu.expandInline(element)
+		}
 		return
 	}
 
@@ -278,7 +280,7 @@ func (xu *XMLUpdater) applyElementSettings(element *Element) {
 	trimmedText := trimSpaceBytes([]byte(text))
 
 	if xu.xmlReader.IsCDATA(element) {
-		if len(trimmedText) < len(text) { //len(trimmedText) == 0 <![CDATA[]]>, len(text) == 0 <abc></abc>
+		if len(trimmedText) < len(text) || len(trimmedText) == 0 { //len(trimmedText) == 0 <![CDATA[]]>, len(text) == 0 <abc></abc>
 			//wrap text into cdata text => <![CDATA[text]]> or remove only whitespaces
 			xu.UpdateTextBytes(element, trimmedText, len(trimmedText) != 0, NoEscaping)
 		}
@@ -359,7 +361,6 @@ func (xu *XMLUpdater) Build(buf Writer) {
 func (xu *XMLUpdater) String() string {
 	buf := getBuffer()
 	defer putBuffer(buf)
-
 	xu.Build(buf)
 	return buf.String()
 }

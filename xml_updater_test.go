@@ -21,7 +21,7 @@ func TestXMLUpdater(t *testing.T) {
 	</f>
 </a>`)
 
-	reader := NewXMLReader(nil)
+	reader := NewXMLReader()
 	if err := reader.Parse(xmlDoc); err != nil {
 		t.Errorf("xml parsing error: %v", err.Error())
 		return
@@ -190,7 +190,7 @@ func TestXMLUpdater_AppendElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -327,7 +327,7 @@ func TestXMLUpdater_PrependElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -454,7 +454,7 @@ func TestXMLUpdater_ReplaceElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -564,7 +564,7 @@ func TestXMLUpdater_RemoveElement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -657,13 +657,13 @@ func TestXMLUpdater_UpdateText(t *testing.T) {
 					xu.UpdateText(reader.SelectElement(nil, "a"), "new data", true, NoEscaping)
 				},
 			},
-			want: `<a/>`,
+			want: `<a></a>`,
 		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -772,7 +772,7 @@ func TestXMLUpdater_AddAttribute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -855,7 +855,7 @@ func TestXMLUpdater_RemoveAttribute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -959,7 +959,7 @@ func TestXMLUpdater_UpdateAttributeValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -1007,7 +1007,7 @@ func TestXMLUpdater_expandInline(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
 			xu := NewXMLUpdater(reader, WriteSettings{})
@@ -1023,8 +1023,8 @@ func TestXMLUpdater_expandInline(t *testing.T) {
 
 func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 	type args struct {
-		in    string
-		setup func(xu *XMLUpdater, reader *XMLReader)
+		in string
+		ws *WriteSettings
 	}
 	tests := []struct {
 		name string
@@ -1035,9 +1035,9 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 			name: "no_settings_enabled",
 			args: args{
 				in: `<a><b/><c/><d>ddata</d><e>edata</e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
-				setup: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.writeSettings.CDATAWrap = false
-					xu.writeSettings.ExpandInline = false
+				ws: &WriteSettings{
+					CDATAWrap:    false,
+					ExpandInline: false,
 				},
 			},
 			want: `<a><b/><c/><d>ddata</d><e>edata</e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
@@ -1046,9 +1046,9 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 			name: "cdata_enabled",
 			args: args{
 				in: `<a><b/><c/><d>ddata</d><e>edata</e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
-				setup: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.writeSettings.CDATAWrap = true
-					xu.writeSettings.ExpandInline = false
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: false,
 				},
 			},
 			want: `<a><b/><c/><d><![CDATA[ddata]]></d><e><![CDATA[edata]]></e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
@@ -1057,9 +1057,9 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 			name: "inline_enabled",
 			args: args{
 				in: `<a><b/><c/><d>ddata</d><e>edata</e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
-				setup: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.writeSettings.CDATAWrap = false
-					xu.writeSettings.ExpandInline = true
+				ws: &WriteSettings{
+					CDATAWrap:    false,
+					ExpandInline: true,
 				},
 			},
 			want: `<a><b></b><c></c><d>ddata</d><e>edata</e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
@@ -1068,9 +1068,9 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 			name: "cdata_inline_enabled",
 			args: args{
 				in: `<a><b/><c/><d>ddata</d><e>edata</e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
-				setup: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.writeSettings.CDATAWrap = true
-					xu.writeSettings.ExpandInline = true
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: true,
 				},
 			},
 			want: `<a><b></b><c></c><d><![CDATA[ddata]]></d><e><![CDATA[edata]]></e><f><![CDATA[fdata]]></f><g><![CDATA[gdata]]></g></a>`,
@@ -1079,29 +1079,68 @@ func TestXMLUpdater_ApplyXMLSettingsOperations(t *testing.T) {
 			name: "cdata_unescapemode",
 			args: args{
 				in: `<a>&lt;new &amp; data&gt;</a>`,
-				setup: func(xu *XMLUpdater, reader *XMLReader) {
-					xu.writeSettings.CDATAWrap = true
-					xu.writeSettings.ExpandInline = true
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: true,
 				},
 			},
 			want: `<a><![CDATA[<new & data>]]></a>`,
+		},
+		{
+			name: "empty_cdata",
+			args: args{
+				in: `<a><![CDATA[]]></a>`,
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: true,
+				},
+			},
+			want: `<a></a>`,
+		},
+		{
+			name: "empty_cdata_with_spaces",
+			args: args{
+				in: `<a><![CDATA[    ]]></a>`,
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: true,
+				},
+			},
+			want: `<a></a>`,
+		},
+		{
+			name: "empty_text",
+			args: args{
+				in: `<a></a>`,
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: true,
+				},
+			},
+			want: `<a></a>`,
+		},
+		{
+			name: "empty_text_with_spaces",
+			args: args{
+				in: `<a>    </a>`,
+				ws: &WriteSettings{
+					CDATAWrap:    true,
+					ExpandInline: true,
+				},
+			},
+			want: `<a></a>`,
 		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reader := NewXMLReader(nil)
+			reader := NewXMLReader()
 			_ = reader.Parse([]byte(tt.args.in))
 
-			xu := NewXMLUpdater(reader, WriteSettings{})
-			tt.args.setup(xu, reader)
-
-			xu.applyXMLSettings()
+			xu := NewXMLUpdater(reader, *tt.args.ws)
 
 			//rebuild buffer
-			out := bytes.Buffer{}
-			xu.Build(&out)
-			assert.Equal(t, tt.want, out.String())
+			assert.Equal(t, tt.want, xu.String())
 		})
 	}
 }
