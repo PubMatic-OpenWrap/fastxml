@@ -52,5 +52,11 @@ func (ir *compressWhitespace) write(b []byte) (int, error) {
 		}
 		tail = head
 	}
+	if tail < head {
+		if i, err := ir.buf.Write(b[tail:head]); err != nil {
+			return tail + i, err
+		}
+		ir.lastChar = b[head-1]
+	}
 	return len(b), nil
 }

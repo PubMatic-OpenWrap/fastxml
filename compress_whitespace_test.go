@@ -106,6 +106,18 @@ func TestCompressWhitespace(t *testing.T) {
 				wantLastChar: '>',
 			},
 		},
+		{
+			name: "only_text",
+			args: args{
+				input:    "text",
+				lastChar: 0,
+			},
+			want: want{
+				want:         "text",
+				wantError:    false,
+				wantLastChar: 't',
+			},
+		},
 	}
 
 	for _, tt := range tests {
