@@ -1,6 +1,7 @@
 package fastxml
 
 import (
+	"bytes"
 	"fmt"
 )
 
@@ -50,28 +51,33 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
 				s.push(Element{data: token, first: -1, last: -1, next: -1})
 			} else if ttype == endXMLToken {
 				//get start xml tag
-				var child *Element
+				var startTag *Element
 
 				if inlineToken {
-					child = &Element{
+					startTag = &Element{
 						data: XMLToken{
 							start: xmlTagIndex{si: i, ei: endIndex},
 						},
 						first: -1, last: -1, next: -1,
 					}
 				} else {
-					child = s.pop()
+					startTag = s.pop()
 				}
 
-				if child == nil {
+				if startTag == nil {
 					return errInvalidXML
 				}
-				child.data.end = xmlTagIndex{si: i, ei: endIndex}
+				startTag.data.end = xmlTagIndex{si: i, ei: endIndex}
+
+				if !inlineToken && !isValid(in, startTag) {
+					return errInvalidXML
+				}
 
 				if cb != nil {
 					//append tokens to list
-					cb(string(child.data.Name(in[:])), s.peek(), *child)
+					cb(string(startTag.data.Name(in[:])), s.peek(), *startTag)
 				}
+
 				//fmt.Printf("%s:<%d,%d,%d>\n", string(child.data.Name(in)), child.data.start.si, child.data.end.ei, child.data.end.ei-child.data.start.si)
 			}
 			i = endIndex
@@ -83,6 +89,11 @@ func (sp *XMLTokenizer) Parse(in []byte, cb TokenHandler) error {
 		return errInvalidXML
 	}
 	return nil
+}
+
+func isValid(in []byte, node *Element) bool {
+	esi, eei := getTokenNameIndex(in, node.data.end.si+2)
+	return bytes.Equal(node.data.Name(in), in[esi:eei])
 }
 
 func (sp *XMLTokenizer) ParseWithXPath(in []byte, ixpath *xpath, cb TokenHandler) error {
@@ -137,23 +148,27 @@ func (sp *XMLTokenizer) ParseWithXPath(in []byte, ixpath *xpath, cb TokenHandler
 			} else if ttype == endXMLToken {
 				//get start xml tag
 				foundTag := true
-				var child *Element
+				var startTag *Element
 
 				if inlineToken {
-					child = &Element{
+					startTag = &Element{
 						data: XMLToken{
 							start: xmlTagIndex{si: i, ei: endIndex},
 						},
 						first: -1, last: -1, next: -1,
 					}
 				} else {
-					child = s.pop()
+					startTag = s.pop()
 				}
 
-				if child == nil {
+				if startTag == nil {
 					return errInvalidXML
 				}
-				child.data.end = xmlTagIndex{si: i, ei: endIndex}
+				startTag.data.end = xmlTagIndex{si: i, ei: endIndex}
+
+				if !inlineToken && !isValid(in, startTag) {
+					return errInvalidXML
+				}
 
 				//xpath handling
 				if ixpath != nil {
@@ -166,7 +181,7 @@ func (sp *XMLTokenizer) ParseWithXPath(in []byte, ixpath *xpath, cb TokenHandler
 
 				if foundTag && cb != nil {
 					//append tokens to list
-					cb(string(child.data.Name(in[:])), s.peek(), *child)
+					cb(string(startTag.data.Name(in[:])), s.peek(), *startTag)
 				}
 				//fmt.Printf("%s:<%d,%d,%d>\n", string(child.data.Name(in)), child.data.start.si, child.data.end.ei, child.data.end.ei-child.data.start.si)
 			}
