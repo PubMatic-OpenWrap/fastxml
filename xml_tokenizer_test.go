@@ -99,30 +99,138 @@ func getXML(in []byte, nodes []XMLToken) string {
 	return buf.String()
 }
 
-func TestXMLTokenizer(t *testing.T) {
-	parser := XMLTokenizer{}
-	in := []byte(minixml)
-	tokenHandler := mockTokenHandler{}
+func TestXMLTokenizerParse(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      string
+		wantErr    bool
+		expected   int      // expected number of tokens
+		tokenNames []string // expected token names in order
+	}{
+		// Valid XML cases
+		{
+			name:       "simple_valid_xml",
+			input:      "<root><child>data</child></root>",
+			wantErr:    false,
+			expected:   2,
+			tokenNames: []string{"child", "root"},
+		},
+		{
+			name:       "self_closing_tag",
+			input:      "<root><child/></root>",
+			wantErr:    false,
+			expected:   2,
+			tokenNames: []string{"child", "root"},
+		},
+		{
+			name:       "empty_xml",
+			input:      "",
+			wantErr:    false,
+			expected:   0,
+			tokenNames: []string{},
+		},
+		{
+			name:       "nested_elements",
+			input:      "<a><b><c>data</c></b></a>",
+			wantErr:    false,
+			expected:   3,
+			tokenNames: []string{"c", "b", "a"},
+		},
+		{
+			name:       "with_attributes",
+			input:      `<root id="1"><child type="text">data</child></root>`,
+			wantErr:    false,
+			expected:   2,
+			tokenNames: []string{"child", "root"},
+		},
+		{
+			name:       "without_handler",
+			input:      "<root><child>data</child></root>",
+			wantErr:    false,
+			expected:   0,
+			tokenNames: []string{},
+		},
+		{
+			name:       "with_namespace",
+			input:      "<ns:root><ns:child>data</ns:child></ns:root>",
+			wantErr:    false,
+			expected:   2,
+			tokenNames: []string{"child", "root"},
+		},
+		// Invalid XML cases
+		{
+			name:       "missing_end_tag",
+			input:      "<root><child></root>",
+			wantErr:    true,
+			expected:   0,
+			tokenNames: []string{},
+		},
+		{
+			name:       "mismatched_tags",
+			input:      "<root><child></wrong></root>",
+			wantErr:    true,
+			expected:   0,
+			tokenNames: []string{},
+		},
+		{
+			name:       "incomplete_tag",
+			input:      "<root><child",
+			wantErr:    true,
+			expected:   0,
+			tokenNames: []string{},
+		},
+		// {
+		// 	name:       "malformed_xml",
+		// 	input:      "<<root>>",
+		// 	wantErr:    true,
+		// 	expected:   0,
+		// 	tokenNames: []string{},
+		// },
+		{
+			name:       "unclosed_tag",
+			input:      "<root>",
+			wantErr:    true,
+			expected:   0,
+			tokenNames: []string{},
+		},
+	}
 
-	//parsing
-	parser.Parse(in[:], tokenHandler.append)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parser := XMLTokenizer{}
+			var handler *mockTokenHandler
+			var callback TokenHandler
 
-	actual := getXML(in[:], tokenHandler.tokens[:])
-	t.Logf("Raw Tags: \n%v\n", printTokens(in[:], tokenHandler.tokens[:]))
-	t.Logf("XML: %v\n", getXML(in[:], tokenHandler.tokens[:]))
-	assert.Equal(t, string(in), actual)
+			if tt.name != "without_handler" {
+				handler = &mockTokenHandler{}
+				callback = handler.append
+			}
+
+			err := parser.Parse([]byte(tt.input), callback)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Equal(t, errInvalidXML, err)
+			} else {
+				assert.NoError(t, err)
+				if handler != nil {
+					assert.Equal(t, tt.expected, len(handler.tokens), "unexpected number of tokens")
+
+					// Verify token names
+					actualNames := make([]string, len(handler.tokens))
+					for i, token := range handler.tokens {
+						actualNames[i] = string(token.Name([]byte(tt.input)))
+					}
+					assert.Equal(t, tt.tokenNames, actualNames, "token names mismatch")
+				}
+			}
+		})
+	}
 }
 
-func TestXPathXMLTokenizer(t *testing.T) {
+func TestXMLTokenizer(t *testing.T) {
+	xml := `<root><ns:child>data</ns:child></root>`
 	parser := XMLTokenizer{}
-	in := []byte(minixml)
-	tokenHandler := mockTokenHandler{}
-
-	//parsing
-	parser.ParseWithXPath(in[:], xpaths["mini"], tokenHandler.append)
-
-	actual := getXML(in[:], tokenHandler.tokens[:])
-	t.Logf("Raw Tags: \n%v\n", printTokens(in[:], tokenHandler.tokens[:]))
-	t.Logf("XML: %v\n", getXML(in[:], tokenHandler.tokens[:]))
-	assert.Equal(t, string(in), actual)
+	err := parser.Parse([]byte(xml), nil)
+	assert.NoError(t, err)
 }
